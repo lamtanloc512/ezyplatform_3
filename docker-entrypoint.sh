@@ -16,6 +16,12 @@
 # docker-compose.yml, seeded here from the .seed-* copies baked at build time.
 set -e
 
+# Without an explicit heap cap, each JVM independently sizes itself against
+# all memory it can see (~25% default). Three of them in one container can
+# easily overcommit and get SIGKILL'd by the OOM killer. Override JAVA_OPTS
+# yourself for a bigger/smaller footprint; this is just a safe default.
+: "${JAVA_OPTS:=-Xms64m -Xmx256m}"
+
 seed() {
     src="$1"; dst="$2"
     if [ -d "$dst" ] && [ -z "$(ls -A "$dst" 2>/dev/null)" ]; then
