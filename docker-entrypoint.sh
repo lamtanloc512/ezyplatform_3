@@ -81,6 +81,11 @@ plugin_cp() {
 run_admin() {
     CP="lib/*:external/lib/*:external/resources:settings:admin/lib/*:admin/settings:admin/resources"
     CP="$CP$(plugin_cp admin)"
+    # admin/stop-service.sh (and the admin UI's own Restart button) look for
+    # our PID here - exec keeps this process's PID, so BASHPID (not $$, which
+    # bash doesn't update inside a backgrounded subshell) is what java becomes.
+    mkdir -p admin/.runtime
+    echo $BASHPID > admin/.runtime/admin_server_instance.pid
     exec java $JAVA_OPTS -cp "$CP" org.youngmonkeys.ezyplatform.admin.AdminStartup
 }
 
