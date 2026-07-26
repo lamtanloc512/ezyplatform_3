@@ -102,6 +102,36 @@ run_socket() {
     exec java $JAVA_OPTS -cp "$CP" org.youngmonkeys.ezyplatform.socket.SocketStartup socket/settings/socket.properties
 }
 
+# Plugin/theme installs from the admin UI need a full process restart to
+# take effect (Java's -cp classpath is fixed at JVM boot, plugin_cp() only
+# rescans on a fresh start). EzyPlatform's admin UI has no restart action of
+# its own, so instead of requiring a manual restart on Railway's dashboard,
+# poll the directories that feed the classpath for changes and trigger our
+# own restart automatically once a change looks settled (debounced so we
+# don't restart mid-upload while a plugin zip is still being extracted).
+watch_plugins() {
+    admin_pid="$1"
+    watch_dirs="admin/plugins web/plugins web/themes socket/plugins"
+    fingerprint() {
+        find $watch_dirs -type f -exec stat -c '%n %Y %s' {} \; 2>/dev/null | sort | sha1sum
+    }
+    prev="$(fingerprint)"
+    while kill -0 "$admin_pid" 2>/dev/null; do
+        sleep 10
+        cur="$(fingerprint)"
+        if [ "$cur" != "$prev" ]; then
+            sleep 10
+            settled="$(fingerprint)"
+            if [ "$settled" = "$cur" ]; then
+                echo "docker-entrypoint: plugin/theme change detected, restarting to apply it"
+                kill "$admin_pid" 2>/dev/null
+                exit 0
+            fi
+        fi
+        prev="$cur"
+    done
+}
+
 case "$1" in
     admin)
         run_admin
@@ -115,8 +145,10 @@ case "$1" in
     all)
         trap 'kill -TERM 0' TERM INT
         run_admin &
+        ADMIN_PID=$!
         run_web &
         run_socket &
+        watch_plugins "$ADMIN_PID" &
         wait -n
         exit $?
         ;;
