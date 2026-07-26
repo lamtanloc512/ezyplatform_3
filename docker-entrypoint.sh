@@ -107,33 +107,40 @@ run_socket() {
     exec java $JAVA_OPTS -cp "$CP" org.youngmonkeys.ezyplatform.socket.SocketStartup socket/settings/socket.properties
 }
 
-# Plugin/theme installs from the admin UI need a full process restart to
-# take effect (Java's -cp classpath is fixed at JVM boot, plugin_cp() only
-# rescans on a fresh start). EzyPlatform's admin UI has no restart action of
-# its own, so instead of requiring a manual restart on Railway's dashboard,
-# poll the directories that feed the classpath for changes and trigger our
-# own restart automatically once a change looks settled (debounced so we
-# don't restart mid-upload while a plugin zip is still being extracted).
-watch_plugins() {
-    admin_pid="$1"
-    watch_dirs="admin/plugins web/plugins web/themes socket/plugins"
+# Plugin/theme installs AND activate/deactivate both need a process restart
+# to take effect (Java's -cp classpath is fixed at JVM boot; activate state
+# lives in .runtime/<service>/*.txt, e.g. .runtime/web/themes.txt, which is
+# a plain file write too - not a DB row, so watching files catches both).
+# EzyPlatform's admin UI has no restart action that reliably reaches our
+# process, so instead of a manual restart on Railway's dashboard, each
+# service supervises itself: watches only ITS OWN directories and restarts
+# only itself when they change (settled, debounced ~10s so we don't restart
+# mid-upload) - so e.g. a web theme change never disturbs admin or socket.
+supervise() {
+    name="$1"; run_fn="$2"; shift 2
+    watch_dirs="$*"
     fingerprint() {
         find $watch_dirs -type f -exec stat -c '%n %Y %s' {} \; 2>/dev/null | sort | sha1sum
     }
-    prev="$(fingerprint)"
-    while kill -0 "$admin_pid" 2>/dev/null; do
-        sleep 10
-        cur="$(fingerprint)"
-        if [ "$cur" != "$prev" ]; then
+    while true; do
+        "$run_fn" &
+        pid=$!
+        prev="$(fingerprint)"
+        while kill -0 "$pid" 2>/dev/null; do
             sleep 10
-            settled="$(fingerprint)"
-            if [ "$settled" = "$cur" ]; then
-                echo "docker-entrypoint: plugin/theme change detected, restarting to apply it"
-                kill "$admin_pid" 2>/dev/null
-                exit 0
+            cur="$(fingerprint)"
+            if [ "$cur" != "$prev" ]; then
+                sleep 10
+                settled="$(fingerprint)"
+                if [ "$settled" = "$cur" ]; then
+                    echo "docker-entrypoint: $name plugin/theme change detected, restarting $name only"
+                    kill "$pid" 2>/dev/null || true
+                fi
             fi
-        fi
-        prev="$cur"
+            prev="$cur"
+        done
+        wait "$pid" 2>/dev/null || true
+        echo "docker-entrypoint: $name exited, relaunching"
     done
 }
 
@@ -149,13 +156,10 @@ case "$1" in
         ;;
     all)
         trap 'kill -TERM 0' TERM INT
-        run_admin &
-        ADMIN_PID=$!
-        run_web &
-        run_socket &
-        watch_plugins "$ADMIN_PID" &
-        wait -n
-        exit $?
+        supervise admin run_admin admin/plugins .runtime/admin &
+        supervise web run_web web/plugins web/themes .runtime/web &
+        supervise socket run_socket socket/plugins .runtime/socket &
+        wait
         ;;
     *)
         exec "$@"
