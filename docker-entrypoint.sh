@@ -116,17 +116,19 @@ run_socket() {
 # service supervises itself: watches only ITS OWN directories and restarts
 # only itself when they change (settled, debounced ~10s so we don't restart
 # mid-upload) - so e.g. a web theme change never disturbs admin or socket.
+SHUTTING_DOWN=0
+
 supervise() {
     name="$1"; run_fn="$2"; shift 2
     watch_dirs="$*"
     fingerprint() {
         find $watch_dirs -type f -exec stat -c '%n %Y %s' {} \; 2>/dev/null | sort | sha1sum
     }
-    while true; do
+    while [ "$SHUTTING_DOWN" = "0" ]; do
         "$run_fn" &
         pid=$!
         prev="$(fingerprint)"
-        while kill -0 "$pid" 2>/dev/null; do
+        while [ "$SHUTTING_DOWN" = "0" ] && kill -0 "$pid" 2>/dev/null; do
             sleep 10
             cur="$(fingerprint)"
             if [ "$cur" != "$prev" ]; then
@@ -139,7 +141,16 @@ supervise() {
             fi
             prev="$cur"
         done
+        # `wait` can return early if this subshell catches a trapped signal
+        # mid-wait (e.g. the container-wide SIGTERM below), before the child
+        # has actually released its port - confirm it's truly gone before
+        # ever considering a relaunch, or two instances briefly race to
+        # bind the same port and one crashes.
         wait "$pid" 2>/dev/null || true
+        while kill -0 "$pid" 2>/dev/null; do
+            sleep 1
+        done
+        [ "$SHUTTING_DOWN" = "1" ] && break
         echo "docker-entrypoint: $name exited, relaunching"
     done
 }
@@ -155,7 +166,12 @@ case "$1" in
         run_socket
         ;;
     all)
-        trap 'kill -TERM 0' TERM INT
+        # SHUTTING_DOWN is set here, in the trap, before the supervise
+        # subshells are forked below, so each one inherits this exact trap
+        # and - since each subshell has its own copy of the variable - sets
+        # its own SHUTTING_DOWN when the signal reaches it, telling its loop
+        # to exit cleanly instead of relaunching mid-shutdown.
+        trap 'SHUTTING_DOWN=1; kill -TERM 0' TERM INT
         supervise admin run_admin admin/plugins .runtime/admin &
         supervise web run_web web/plugins web/themes .runtime/web &
         supervise socket run_socket socket/plugins .runtime/socket &
