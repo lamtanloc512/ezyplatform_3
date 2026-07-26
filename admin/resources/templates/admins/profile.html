@@ -1,0 +1,320 @@
+<!--
+ ~ Copyright 2022 youngmonkeys.org
+ ~ 
+ ~ Licensed under the ezyplatform, Version 1.0.0 (the "License");
+ ~ you may not use this file except in compliance with the License.
+ ~ You may obtain a copy of the License at
+ ~ 
+ ~     https://youngmonkeys.org/licenses/ezyplatform-1.0.0.txt
+ ~ 
+ ~ Unless required by applicable law or agreed to in writing, software
+ ~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~ See the License for the specific language governing permissions and
+ ~ limitations under the License.
+-->
+
+<!DOCTYPE html>
+<html
+        xmlns="http://www.w3.org/1999/xhtml"
+        xmlns:th="http://www.thymeleaf.org"
+        xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+        layout:decorate="~{ezyadmin}">
+
+<body>
+<div layout:fragment="content" class="row">
+    <div class="col-3 d-flex align-items-center">
+        <label>[[#{avatar}]]:</label>
+    </div>
+    <div class="col-9">
+        <div class="image-button wh-72px mb-3">
+            <img id="adminAvatarImage" class="rounded-circle object-fit-cover" width="72" height="72"
+                 th:classappend="${adminAvatarImage != null ? '' : 'd-none'}"
+                 th:if="${selectedAdmin.id == adminId || adminRoles.isAccessible('/api/v1/media/{name}')}"
+                 th:src="${adminAvatarImage != null ? (selectedAdmin.id == adminId ? adminAvatarImage.getMeUrlOrDefault('') : adminAvatarImage.getUrlOrDefault('')) : '#'}">
+            <div id="adminAvatarImageTmp" class="text-uppercase rounded-circle avatar-tmp wh-72px"
+                 th:classappend="${adminAvatarImage != null ? (selectedAdmin.id == adminId ? 'd-none' : (adminRoles.isAccessible('/api/v1/media/{name}') ? 'd-none' : '')) : ''}">
+                [[${selectedAdmin.name.charAt(0)}]]
+            </div>
+            <button type="button" id="editAvatarButton" class="rounded-circle" onclick="ezyadmin.selectAdminAvatarImage();"
+                    th:if="${selectedAdmin.id == adminId || adminRoles.isAccessible('/api/v1/admins/{username}/update-avatar', 'PUT')}">
+                <i class="fas fa-pencil-alt"></i>
+            </button>
+        </div>
+    </div>
+    <div class="col-3 d-flex align-items-center">
+        <label>[[#{cover_image}]]:</label>
+    </div>
+    <div class="col-9">
+        <div class="image-button mb-3 w-192" id="mainAdminCoverImageContainer"
+            th:classappend="${adminCoverImage != null ? '' : 'd-none'}">
+            <img id="adminCoverImage" class="object-fit-cover mw-100" width="192" height="128"
+                 th:classappend="${adminCoverImage != null ? '' : 'd-none'}"
+                 th:if="${selectedAdmin.id == adminId || adminRoles.isAccessible('/api/v1/media/{name}')}"
+                 th:src="${adminCoverImage != null ? (selectedAdmin.id == adminId ? adminCoverImage.getMeUrlOrDefault('') : adminCoverImage.getUrlOrDefault('')) : '#'}">
+            <button type="button" id="editCoverImageButton" onclick="ezyadmin.selectAdminCoverImage();"
+                    th:if="${selectedAdmin.id == adminId || adminRoles.isAccessible('/api/v1/admins/{username}/update-cover-image', 'PUT')}">
+                <i class="fas fa-pencil-alt"></i>
+            </button>
+        </div>
+        <button type="button" id="addAdminCoverImageButton" class="btn btn-link pl-0"
+                th:classappend="${adminCoverImage != null ? 'd-none' : ''}"
+                th:if="${selectedAdmin.id == adminId || adminRoles.isAccessible('/api/v1/admins/{username}/update-cover-image', 'PUT')}"
+                onclick="ezyadmin.selectAdminCoverImage();">
+            [[#{add}]]
+            <i class="fas fa-plus-square"></i>
+        </button>
+    </div>
+    <div class="col-md-3 col-4"><label>[[#{id}]]:</label></div>
+    <div class="col-md-9 col-8">[[${selectedAdmin.id}]]</div>
+    <div class="col-md-3 col-4"><label>[[#{uuid}]]:</label></div>
+    <div class="col-md-9 col-8">[[${selectedAdmin.uuid}]]</div>
+    <div class="col-md-3 col-4"><label>[[#{username}]]:</label></div>
+    <div class="col-md-9 col-8">[[${selectedAdmin.username}]]</div>
+    <div class="col-md-3 col-4 d-none change-password"><label>[[#{password}]]:</label></div>
+    <div class="col-md-2 col-6 d-none change-password">
+        <button type="button" class="btn btn-outline-primary form-control"
+                onclick="ezyadmin.showChangePasswordModal();">[[#{change}]]</button>
+    </div>
+    <div class="col-md-7 col-2 d-none change-password"></div>
+    <div class="col-md-3 col-4"><label>[[#{display_name}]]:</label></div>
+    <div class="col-md-9 col-8">[[${selectedAdmin.displayName}]]</div>
+    <div class="col-md-3 col-4"><label>[[#{email}]]:</label></div>
+    <div class="col-md-9 col-8">
+        <a th:href="${'mailto:' + selectedAdmin.email}">
+            [[${selectedAdmin.email}]]
+        </a>
+    </div>
+    <div class="col-md-3 col-4"><label>[[#{phone}]]:</label></div>
+    <div class="col-md-9 col-8">
+        <a th:href="${'tel:' + selectedAdmin.phone}">
+            [[${selectedAdmin.phone}]]
+        </a>
+    </div>
+    <div class="col-md-3 col-4"><label>[[#{job_title}]]:</label></div>
+    <div class="col-md-9 col-8">[[${adminJobTitle}]]</div>
+    <div class="col-md-3 col-4"><label>[[#{website}]]:</label></div>
+    <div class="col-md-9 col-8">
+        <a th:href="${selectedAdmin.url}">[[${selectedAdmin.url}]]</a>
+    </div>
+    <div class="col-md-3 col-4"><label>[[#{description}]]:</label></div>
+    <div class="col-md-9 col-8">[[${adminDescription}]]</div>
+    <div class="col-md-3 col-4"><label>[[#{allow_access_to_all_media}]]:</label></div>
+    <div class="col-md-9 col-8">
+        <div class="d-flex align-items-center h-100">
+            <input type="checkbox" class="wh-1rem mb-1"
+                   onclick="ezyadmin.onAllowAccessAllMediaChanged(this);"
+                   th:checked="${(selectedAdmin.id == adminId && adminRoles.superAdmin) || allowAccessAllMedia}"
+                   th:disabled="${(selectedAdmin.id == adminId && adminRoles.superAdmin) || !adminRoles.isAccessible('/api/v1/admins/{username}/allow-access-all-media', 'PUT')}">
+        </div>
+    </div>
+    <div class="col-12" id="adminDetailsProfilePlaceholder"></div>
+    <div class="col-md-3 col-4"><label>[[#{status}]]:</label></div>
+    <div class="col-md-9 col-8 status-text" th:attr="status=|${selectedAdmin.status}|">
+        [[#{${selectedAdmin.status.toString().toLowerCase()}}]]
+    </div>
+    <div class="col-md-3 col-4"><label>[[#{created_at}]]:</label></div>
+    <div class="col-md-9 col-8 date-time-string">[[${selectedAdmin.createdAt}]]</div>
+    <div class="col-md-3 col-4"><label>[[#{updated_at}]]:</label></div>
+    <div class="col-md-9 col-8 date-time-string">[[${selectedAdmin.updatedAt}]]</div>
+    <th:block th:if="${selectedAdmin.id == adminId}">
+        <div class="col-md-3 col-4"><label>[[#{access_token}]]:</label></div>
+        <div class="col-md-9 col-8">
+            <div class="d-flex flex-column gap-2">
+                <a href="javascript:void(0)"
+                   class="text-wrap text-break text-dark text-decoration-none d-none admin-access-token-value-wrapper"
+                   th:attr="onclick=|ezyadmin.copyToClipboard('adminAccessTokenValue', false, '#{access_token}')|">
+                    <span class="admin-access-token-value" id="adminAccessTokenValue"></span>
+                    <span><i class="fas fa-copy"></i> [[#{copy}]]</span>
+                </a>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-primary admin-access-token-show-button"
+                        onclick="ezyadmin.onShowAccessTokenClick();">
+                        [[#{show}]]
+                    </button>
+                    <button type="button" class="btn btn-danger admin-access-token-delete-button"
+                        onclick="ezyadmin.onDeleteAccessTokensClick();">
+                        [[#{delete}]]
+                </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-4"><label>[[#{token_expiration_time}]]:</label></div>
+        <div class="col-md-9 col-8 admin-access-token-expiration-time"></div>
+    </th:block>
+    <div class="col-12" id="adminProfilePlaceholder"></div>
+    <th:block th:replace="~{fragments/additional :: content}" />
+    <div class="col-12"><label>[[#{role_list}]]:</label></div>
+    <div class="col-md-3 col-4"></div>
+    <div class="col-md-9 col-8">
+        <button class="btn btn-danger mb-2 d-none" id="profileLogout" onclick="ezyadmin.logout();">
+            [[#{logout}]] <i class="nav-icon fas fa-sign-out-alt"></i>
+        </button>
+    </div>
+    <div class="col-lg-8">
+        <table id="roleList" class="table bg-white table-bordered table-hover align-middle-cells">
+            <thead>
+            <tr>
+                <th class="text-center pl-2p5">#</th>
+                <th class="text-center">[[#{role_name}]]</th>
+                <th class="text-center">[[#{added_at}]]</th>
+                <th class="text-center">[[#{actions}]]</th>
+            </tr>
+            </thead>
+            <tbody id="roleListBody">
+            </tbody>
+        </table>
+    </div>
+    <th:block th:if="${adminRoles.isAccessible('/api/v1/admins/{adminId}/activities')}">
+        <th:block th:replace="~{admins/admin-activity-history :: content}" />
+    </th:block>
+    <th:block th:if="${selectedAdmin.id == adminId && adminRoles.isAccessible('/api/v1/admins/activities')}">
+        <th:block th:replace="~{admins/all-admin-activity-history :: content}" />
+    </th:block>
+</div>
+<th:block layout:fragment="modals">
+    <th:block th:replace="~{modals/enter-password :: content}" />
+</th:block>
+<script layout:fragment="scripts" th:inline="javascript">
+/*<![CDATA[*/
+ezyadmin.adminIsMe = /*[[${selectedAdmin.id == adminId}]]*/;
+ezyadmin.selectedAdminId = /*[[${selectedAdmin.id}]]*/ '';
+ezyadmin.selectedAdminUsername = /*[[${selectedAdmin.username}]]*/ '';
+ezyadmin.accessibleUris['/admins/roles/{roleName}'] = /*[[${adminRoles.isAccessible('/admins/roles/{roleName}')}]]*/;
+ezyadmin.accessibleUris['/api/v1/admins/me/roles'] = /*[[${adminRoles.isAccessible('/api/v1/admins/me/roles')}]]*/;
+ezyadmin.accessibleUris['/api/v1/admins/{username}/roles'] = /*[[${adminRoles.isAccessible('/api/v1/admins/{username}/roles')}]]*/;
+/*]]>*/
+
+// ========== admin init =============
+ezyadmin.onEditButtonClick = function() {
+    var url = ezyadmin.adminIsMe
+        ? '/admins/me/edit'
+        : '/admins/' + ezyadmin.selectedAdminUsername + '/edit';
+    window.location = url + (ezyadmin.lang ? '?lang=' + ezyadmin.lang : '');
+}
+
+// ========== show / delete access token =============
+ezyadmin.onShowAccessTokenClick = function() {
+    ezyadmin.enterPasswordApi = {
+        url: '/api/v1/admins/me/access-token/fetch',
+        method: 'POST',
+        onSuccess: (data) => {
+            $('.admin-access-token-value').text(data.accessToken);
+            $('.admin-access-token-expiration-time')
+                .text(ezyadmin.formatTimeStamp(data.expiredAt));
+            $('.admin-access-token-value-wrapper').removeClass('d-none');
+            $('.admin-access-token-show-button').addClass('d-none');
+        },
+        showToast: false
+    };
+    ezyadmin.showEnterPasswordModal();
+}
+
+ezyadmin.onDeleteAccessTokensClick = function() {
+    ezyadmin.enterPasswordApi = {
+        url: '/api/v1/admins/me/access-tokens',
+        method: 'DELETE',
+        onSuccess: (data) => {
+            ezyadmin.redirectToLogin();
+        }
+    };
+    ezyadmin.showEnterPasswordModal();
+}
+
+// ========== admin roles =============
+ezyadmin.fetchAdminRoleList = function() {
+    var rolesApiUrl = ezyadmin.adminIsMe
+        ? '/api/v1/admins/me/roles'
+        : '/api/v1/admins/' + ezyadmin.selectedAdminUsername + '/roles';
+    $.ajax({
+        url: rolesApiUrl,
+        type: 'GET',
+        dataType: 'json'
+    })
+    .done(function(data) {
+        ezyadmin.renderAdminRoleListTable(data);
+    })
+    .fail(function(e) {
+        ezyadmin.processGetApiErrors(e);
+    });
+}
+
+ezyadmin.renderAdminRoleListTable = function(adminRoleList) {
+    var html = ezyadmin.buildAdminRoleListBodyHtml(adminRoleList);
+    ezyadmin.destroyDataTableIfExists('roleList');
+    $('#roleListBody').html(html);
+    ezyadmin.createDataTable('roleList', 12);
+}
+
+ezyadmin.buildAdminRoleListBodyHtml = function(adminRoleList) {
+    var html = '';
+    adminRoleList.forEach((role, index) => {
+        html += ezyadmin.buildAdminRoleListItemHtml(role, index);
+    });
+    return html;
+}
+
+ezyadmin.buildAdminRoleListItemHtml = function(role, index) {
+    var roleUrl = '/admins/roles/' + role.name + (ezyadmin.lang ? '?lang=' + ezyadmin.lang : '');
+    var html = `
+        <tr>
+            <td class="text-center pl-2p5">${index + 1}</td>
+            <td class="text-center">
+                <a href="${roleUrl}">
+                    ${role.displayName}
+                </a>
+            </td>
+            <td class="text-center">${ezyadmin.formatTimeStamp(role.createdAt)}</td>
+            <td class="text-center">
+                ${ezyadmin.accessibleUris['/admins/roles/{roleName}'] ? `
+                    <a class="btn btn-link" href="${roleUrl}">
+                        <i class="fas fa-eye text-primary"></i>
+                    </a>
+                ` : ''}
+            </td>
+        </tr>
+        `;
+    return html;
+}
+
+var accessibleRolesApi = ezyadmin.adminIsMe
+    ? ezyadmin.accessibleUris['/api/v1/admins/me/roles']
+    : ezyadmin.accessibleUris['/api/v1/admins/{username}/roles'];
+if (accessibleRolesApi) {
+    ezyadmin.fetchAdminRoleList();
+} else {
+    ezyadmin.createDataTable('roleList', 12);
+}
+
+// ========== admin update ==========================
+ezyadmin.onAllowAccessAllMediaChanged = function(e) {
+    var allow = $(e).prop('checked');
+    $.ajax({
+        type: 'PUT',
+        url: '/api/v1/admins/' + ezyadmin.selectedAdminUsername + '/allow-access-all-media',
+        contentType: 'application/json',
+        data: JSON.stringify({allow: allow}),
+        success: function () {
+            // do nothing
+        },
+        error: function (data, e) {
+            ezyadmin.processUpdateApiErrors({}, data);
+        }
+    });
+}
+
+</script>
+<th:block layout:fragment="post-scripts">
+    <th:block th:replace="~{scripts/suggestion :: input}" />
+    <th:block th:replace="~{scripts/suggestion :: admin}" />
+    <th:block th:replace="~{admins/scripts :: avatar}" />
+    <th:block th:if="${adminRoles.isAccessible('/api/v1/admins/{adminId}/activities')}">
+        <th:block th:replace="~{admins/admin-activity-history :: scripts}" />
+    </th:block>
+    <th:block th:if="${selectedAdmin.id == adminId && adminRoles.isAccessible('/api/v1/admins/activities')}">
+        <th:block th:replace="~{admins/all-admin-activity-history :: scripts}" />
+    </th:block>
+    <th:block th:replace="~{modals/enter-password :: scripts}" />
+</th:block>
+</body>
+</html>

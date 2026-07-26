@@ -1,0 +1,950 @@
+<!--
+ ~ Copyright 2022 youngmonkeys.org
+ ~ 
+ ~ Licensed under the ezyplatform, Version 1.0.0 (the "License");
+ ~ you may not use this file except in compliance with the License.
+ ~ You may obtain a copy of the License at
+ ~ 
+ ~     https://youngmonkeys.org/licenses/ezyplatform-1.0.0.txt
+ ~ 
+ ~ Unless required by applicable law or agreed to in writing, software
+ ~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~ See the License for the specific language governing permissions and
+ ~ limitations under the License.
+-->
+
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="content">
+	<div th:if="${includeMediaModal != false}" class="modal fade" id="media-modal">
+		<div class="modal-dialog modal-xl">
+			<div class="modal-content">
+				<div class="modal-header">
+					<div class="d-flex">
+						<h4 class="modal-title">[[#{media}]]</h4>
+						<button type="button" class="btn btn-outline-primary ml-3"
+						        th:if="${adminRoles.isAccessible('/api/v1/media/add', 'POST')}"
+								onclick="ezyadmin.showAddNewMediaModal();">
+							[[#{add_new}]]
+						</button>
+						<button type="button" class="btn btn-outline-info ml-3 d-none" id="selectMediasButton"
+						        onclick="ezyadmin.onSelectMediasButtonClicked();">
+							[[#{select}]]
+						</button>
+					</div>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body max-height-85vn-scroll">
+					<div class="px-2">
+						<div class="row">
+							<div class="col-lg-3 col-md-4 page-search">
+								<input type="search" class="form-control"
+								   id="mediaModelSearchKeywordInput"
+								   th:placeholder="#{keyword}"
+								   oninput="ezyadmin.onKeydownToSearchMedia(this);"
+								   onkeydown="ezyadmin.onKeydownToSearchMedia(this);">
+							</div>
+							<div class="col-lg-3 col-md-4 page-search">
+								<input type="search" class="form-control"
+								       id="mediaModelSearchGroupNamePrefixInput"
+								       th:placeholder="#{group_name}"
+								       oninput="ezyadmin.onKeydownToSearchMediaGroupNamePrefix(this);"
+								       onkeydown="ezyadmin.onKeydownToSearchMediaGroupNamePrefix(this);">
+							</div>
+							<div class="col-lg-3 col-md-4 page-search">
+								<select class="form-control" id="mediaModelSearchTypeSelect"
+										onchange="ezyadmin.onSearchMediaTypeChanged(this);">
+									<option value="">[[#{all_type}]]</option>
+									<option th:each="searchMediaType : ${searchMediaTypes}"
+											th:value="${searchMediaType}">
+										[[#{${searchMediaType.toString().toLowerCase()}}]]
+									</option>
+								</select>
+							</div>
+							<div class="col-lg-3 col-md-4 page-search">
+								<select class="form-control" id="mediaModelSearchStatusSelect"
+										onchange="ezyadmin.onSearchMediaStatusChanged(this);">
+									<option value="">[[#{status}]]</option>
+									<option th:each="searchStatus : ${searchMediaStatuses}"
+											th:value="${searchStatus}">
+										[[#{${searchStatus.toString().toLowerCase()}}]]
+									</option>
+								</select>
+							</div>
+							<div class="col-lg-3 col-md-4 page-search">
+								<input type="text" class="form-control"
+								       id="mediaModelSearchDatePicker"
+								       th:placeholder="#{date}">
+							</div>
+							<div class="col-lg-3 col-md-4 page-search">
+								<input type="text" class="form-control"
+								       id="mediaModelSearchTimeRangePicker"
+								       th:placeholder="#{time_range}">
+							</div>
+							<div class="col-lg-3 col-md-4 page-search">
+								<select class="form-control"
+										onchange="ezyadmin.onSearchMediaSortOrderChanged(this);">
+									<option value="">[[#{sort_by}]]</option>
+									<option th:each="sortOrder : ${searchMediaSortOrders}"
+											th:value="${sortOrder}">
+										[[#{'sort_by_' + ${sortOrder.toString().toLowerCase()}}]]
+									</option>
+								</select>
+							</div>
+							<div class="col-lg-3 col-md-4 page-search">
+								<select class="form-control" id="mediaModelDisplayTypeSelect"
+										onchange="ezyadmin.onMediaDisplayTypeChanged(this);">
+									<option value="ICONS">[[#{display_type}]]</option>
+									<option value="ICONS" selected>
+										[[#{display_type_icons}]]
+									</option>
+									<option value="LIST">
+										[[#{display_type_list}]]
+									</option>
+								</select>
+							</div>
+							<div class="col-lg-3 col-md-4 page-search">
+								<select class="form-control" id="mediaModelSearchLimit"
+										onchange="ezyadmin.onSearchMediaLimitChanged(this);">
+									<option th:value="${numberOfMediaPerPage}" selected>
+										[[#{limit}]]
+									</option>
+									<option value="30">30 [[#{item_s}]]</option>
+									<option value="50">50 [[#{item_s}]]</option>
+									<option value="100">100 [[#{item_s}]]</option>
+									<option value="200">200 [[#{item_s}]]</option>
+									<option value="300">300 [[#{item_s}]]</option>
+									<option value="400">400 [[#{item_s}]]</option>
+									<option value="500">500 [[#{item_s}]]</option>
+								</select>
+							</div>
+							<div th:if="${allowReduceMediaFileSize}" class="col-lg-3 col-md-4 page-search reduce-selected-media-files-button-wrapper d-none">
+								<button type="button" class="btn btn-primary form-control"
+										onclick="ezyadmin.onReduceSelectedMediaFilesClick();">
+									[[#{reduce_file_size_button_title}]]
+								</button>
+							</div>
+						</div>
+					</div>
+					<div class="selected-media-count-text-wrapper d-none py-2">
+						<span class="selected-media-count-text"></span>
+					</div>
+					<div class="text-center">
+						<ul class="media-list" id="mediaListBody"></ul>
+					</div>
+					<div class="d-flex flex-column text-center">
+						<span>
+							[[#{showing}]]
+							<span id="mediaCountText">0</span>
+							[[${#strings.toLowerCase(#messages.msg('of'))}]]
+							<span id="totalMediaText">0</span>
+							[[${#strings.toLowerCase(#messages.msg('media_items'))}]]
+						</span>
+						<div>
+							<button type="button" class="btn btn-primary pl-5 pr-5 mt-2 mb-3 d-none" id="loadMoreMediaButton">
+								[[#{load_more}]]
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</th:block>
+<script th:fragment="scripts" th:inline="javascript">
+/*<![CDATA[*/
+ezyadmin.allowReduceMediaFileSize = /*[[${allowReduceMediaFileSize}]]*/;
+ezyadmin.allowPermanentlyDeleteMedia = /*[[${allowPermanentlyDeleteMedia}]]*/;
+ezyadmin.numberOfMediaPerPage = /*[[${numberOfMediaPerPage}]]*/;
+ezyadmin.maxReducedImageFileSize = /*[[${maxReducedImageFileSize}]]*/;
+ezyadmin.messages.action = /*[[#{action}]]*/;
+ezyadmin.messages.administrator = /*[[#{administrator}]]*/;
+ezyadmin.messages.click_to_view_full_screen_and_zoom = /*[[#{click_to_view_full_screen_and_zoom}]]*/;
+ezyadmin.messages.delete_successfully = /*[[#{delete_successfully}]]*/;
+ezyadmin.messages.delete_failed = /*[[#{delete_failed}]]*/;
+ezyadmin.messages.do_you_want_to_reduce_selected_media_file_size = /*[[#{do_you_want_to_reduce_selected_media_file_size}]]*/;
+ezyadmin.messages.file_size = /*[[#{file_size}]]*/;
+ezyadmin.messages.name = /*[[#{name}]]*/;
+ezyadmin.messages.next = /*[[#{next}]]*/;
+ezyadmin.messages.previous = /*[[#{previous}]]*/;
+ezyadmin.messages.reduce_file_size_failed_message = /*[[#{reduce_file_size_failed_message}]]*/;
+ezyadmin.messages.reduced_the_file_size_of_files_summary = /*[[#{reduced_the_file_size_of_files_summary}]]*/;
+ezyadmin.messages.script = /*[[#{script}]]*/;
+ezyadmin.messages.selected_pcount_medias = /*[[#{selected_pcount_medias}]]*/;
+ezyadmin.messages.type = /*[[#{type}]]*/;
+ezyadmin.messages.update_successfully = /*[[#{update_successfully}]]*/;
+ezyadmin.messages.update_failed = /*[[#{update_failed}]]*/;
+ezyadmin.messages.updated_at = /*[[#{updated_at}]]*/;
+ezyadmin.messages.upload_by = /*[[#{upload_by}]]*/;
+ezyadmin.messages.user = /*[[#{user}]]*/;
+ezyadmin.messages.zoom = /*[[#{zoom}]]*/;
+ezyadmin.accessibleUris['/api/v1/media/list'] = /*[[${adminRoles.isAccessible('/api/v1/media/list')}]]*/;
+ezyadmin.accessibleUris['/api/v1/media/{name}'] = /*[[${adminRoles.isAccessible('/api/v1/media/{name}')}]]*/;
+/*]]>*/
+
+$(document).on('keydown.ezyadminMediaDetails', function(event) {
+	if (event.key === 'Escape') {
+		if ($('#media-modal').hasClass('show')) {
+			$('#media-modal').modal('hide');
+		}
+		if ($('#media-details').hasClass('show')) {
+			$('#media-details').modal('hide');
+		}
+	}
+});
+
+// =========== filter ==========
+ezyadmin.clearMediaDateFilters = function() {
+	ezyadmin.searchMediaCreatedAtStartInclusive = 0;
+	ezyadmin.searchMediaCreatedAtEndInclusive = 0;
+}
+
+ezyadmin.onMediaDateFilterInputChanged = function(e) {
+	if ($(e).val()) {
+		return;
+	}
+	ezyadmin.clearMediaDateFilters();
+	ezyadmin.fetchMediaList(true);
+}
+
+$(document).ready(() => {
+	ezyadmin.createDateRangePicker(
+		'#mediaModelSearchDatePicker',
+		{
+			singleDatePicker: true,
+			autoUpdateInput: false
+		},
+		function(start) {
+			$('#mediaModelSearchDatePicker').val(start.format(ezyadmin.defaultDateFormat));
+			$('#mediaModelSearchTimeRangePicker').val('');
+			ezyadmin.searchMediaCreatedAtStartInclusive = start.clone().startOf('day').unix() * 1000;
+			ezyadmin.searchMediaCreatedAtEndInclusive = start.clone().endOf('day').unix() * 1000;
+			ezyadmin.fetchMediaList(true);
+		}
+	);
+	$('#mediaModelSearchDatePicker').on('cancel.daterangepicker', function() {
+		ezyadmin.clearMediaDateFilters();
+		$(this).val('');
+		ezyadmin.fetchMediaList(true);
+	});
+	$('#mediaModelSearchDatePicker').on('input', function() {
+		ezyadmin.onMediaDateFilterInputChanged(this);
+	});
+	ezyadmin.createDateRangePicker(
+		'#mediaModelSearchTimeRangePicker',
+		{
+			autoUpdateInput: false
+		},
+		function(start, end) {
+			$('#mediaModelSearchTimeRangePicker').val(
+				start.format(ezyadmin.defaultDateFormat)
+				+ ' - '
+				+ end.format(ezyadmin.defaultDateFormat)
+			);
+			$('#mediaModelSearchDatePicker').val('');
+			ezyadmin.searchMediaCreatedAtStartInclusive = start.unix() * 1000;
+			ezyadmin.searchMediaCreatedAtEndInclusive = end.unix() * 1000;
+			ezyadmin.fetchMediaList(true);
+		}
+	);
+	$('#mediaModelSearchTimeRangePicker').on('cancel.daterangepicker', function() {
+		ezyadmin.clearMediaDateFilters();
+		$(this).val('');
+		ezyadmin.fetchMediaList(true);
+	});
+	$('#mediaModelSearchTimeRangePicker').on('input', function() {
+		ezyadmin.onMediaDateFilterInputChanged(this);
+	});
+});
+
+
+// =========== show media modal ==========
+ezyadmin.mediaSelectedHandlers = {};
+ezyadmin.showMediaModal = function(command) {
+	ezyadmin.mediaCount = 0;
+	ezyadmin.mediaTotal = 0;
+	ezyadmin.lastNextPageToken = '';
+	ezyadmin.mediaDisplayType = 'ICONS';
+	ezyadmin.searchMediaKeyword = '';
+	ezyadmin.searchMediaGroupNamePrefix = '';
+	ezyadmin.searchMediaType = '';
+	ezyadmin.searchMediaStatus = '';
+	ezyadmin.clearMediaDateFilters();
+	$('#mediaModelSearchKeywordInput').val('');
+	$('#mediaModelSearchGroupNamePrefixInput').val('');
+	$('#mediaModelSearchTypeSelect').val('');
+	$('#mediaModelSearchStatusSelect').val('');
+	$('#mediaModelDisplayTypeSelect').val(ezyadmin.mediaDisplayType);
+	$('#mediaModelSearchDatePicker').val('');
+	$('#mediaModelSearchTimeRangePicker').val('');
+	$('#mediaListBody').html('');
+	ezyadmin.fetchMediaList(true);
+	$('#media-modal').modal('show');
+	var handler = {};
+	handler.onMediaShow = function (callback) {
+		handler.showCallback = callback;
+		return handler;
+	};
+	handler.onMediaModelHide = function (callback) {
+		handler.mediaModalHideCallback = callback;
+		return handler;
+	};
+	handler.onMediaSelected = function (callback) {
+		handler.selectCallback = callback;
+		return handler;
+	};
+	handler.onMultipleMediaSelected = function (callback) {
+		handler.selectMultipleCallback = callback;
+		return handler;
+	};
+	var actualCommand = command || '';
+	ezyadmin.mediaSelectedHandlers[actualCommand] = handler;
+	ezyadmin.currentMediaSelectedCommand = actualCommand;
+	return handler;
+}
+
+ezyadmin.closeMediaModal = function() {
+	$('#media-modal').modal('hide');
+	$('#media-details').modal('hide');
+}
+
+$('#media-modal').on('hidden.bs.modal', function () {
+    var handler = ezyadmin.mediaSelectedHandlers[ezyadmin.currentMediaSelectedCommand];
+	if (handler) {
+		var mediaModalHideCallback = handler.mediaModalHideCallback;
+		if (mediaModalHideCallback) {
+			mediaModalHideCallback();
+		}
+	}
+});
+
+ezyadmin.selectMedia = function() {
+	ezyadmin.mediaSelectedHandlers[ezyadmin.currentMediaSelectedCommand]?.selectCallback(ezyadmin.selectedMedia);
+}
+
+// =============== search media ==========
+ezyadmin.onKeydownToSearchMedia = function(e) {
+	var before = ezyadmin.searchMediaKeyword;
+	ezyadmin.searchMediaKeyword = $(e).val();
+	if(event.key === 'Enter' || (before && !ezyadmin.searchMediaKeyword)) {
+		ezyadmin.fetchMediaList(true);
+    }
+}
+
+ezyadmin.onKeydownToSearchMediaGroupNamePrefix = function(e) {
+	var before = ezyadmin.searchMediaGroupNamePrefix;
+	ezyadmin.searchMediaGroupNamePrefix = $(e).val();
+	if(event.key === 'Enter' || (before && !ezyadmin.searchMediaGroupNamePrefix)) {
+		ezyadmin.fetchMediaList(true);
+    }
+}
+
+ezyadmin.onSearchMediaTypeChanged = function(e) {
+	ezyadmin.searchMediaType = $(e).val();
+	ezyadmin.fetchMediaList(true);
+}
+
+ezyadmin.onSearchMediaStatusChanged = function(e) {
+	ezyadmin.searchMediaStatus = $(e).val();
+	ezyadmin.fetchMediaList(true);
+}
+
+ezyadmin.onSearchMediaSortOrderChanged = function(e) {
+	ezyadmin.searchMediaSortOrder = $(e).val();
+	ezyadmin.fetchMediaList(true);
+}
+
+ezyadmin.onSearchMediaLimitChanged = function(e) {
+	ezyadmin.numberOfMediaPerPage = $(e).val();
+	ezyadmin.fetchMediaList(true);
+}
+
+ezyadmin.onMediaDisplayTypeChanged = function(e) {
+	ezyadmin.mediaDisplayType = $(e).val();
+	ezyadmin.renderMediaList();
+}
+
+// ========== media list =============
+ezyadmin.mediaCount = 0;
+ezyadmin.mediaTotal = 0;
+ezyadmin.mediaById = {};
+ezyadmin.mediaList = [];
+ezyadmin.mediaDisplayType = 'ICONS';
+
+ezyadmin.fetchMediaList = function(replace) {
+	var url = ezyadmin.mediaListApiTemp;
+	ezyadmin.mediaListApiTemp = null;
+	if (!url) {
+		url = ezyadmin.accessibleUris['/api/v1/media/list']
+			? '/api/v1/media/list'
+			: '/api/v1/me/media/list';
+	}
+	url += '?limit=' + ezyadmin.numberOfMediaPerPage;
+	if (ezyadmin.searchMediaKeyword) {
+		url += '&keyword=' + ezyadmin.searchMediaKeyword;
+	}
+	if (ezyadmin.searchMediaGroupNamePrefix) {
+		url += '&groupNamePrefix=' + ezyadmin.searchMediaGroupNamePrefix;
+	}
+	if (ezyadmin.searchMediaType) {
+		url += '&type=' + ezyadmin.searchMediaType;
+	}
+	if (ezyadmin.searchMediaStatus) {
+		url += '&status=' + ezyadmin.searchMediaStatus;
+	}
+	if (ezyadmin.searchMediaCreatedAtStartInclusive) {
+		url += '&createdAtStartInclusive=' + ezyadmin.searchMediaCreatedAtStartInclusive;
+	}
+	if (ezyadmin.searchMediaCreatedAtEndInclusive) {
+		url += '&createdAtEndInclusive=' + ezyadmin.searchMediaCreatedAtEndInclusive;
+	}
+	if (ezyadmin.searchMediaSortOrder) {
+		url += '&sortOrder=' + ezyadmin.searchMediaSortOrder;
+	}
+	if (replace) {
+		ezyadmin.mediaById = {};
+		ezyadmin.mediaList = [];
+		ezyadmin.lastNextPageToken = null;
+	}
+    $.ajax({
+        type: "GET",
+        url: url + (ezyadmin.lastNextPageToken
+        	? '&nextPageToken=' + ezyadmin.lastNextPageToken
+        	: ''),
+        success: function(data) {
+            data.items.forEach((item) => {
+				ezyadmin.mediaById[item.id] = item;
+            });
+            ezyadmin.mediaList = replace
+            	? data.items.slice()
+            	: ezyadmin.mediaList.concat(data.items);
+            ezyadmin.appendToMediaListTable(data.items, false, replace);
+            ezyadmin.mediaCount = replace
+            	? data.count
+            	: ezyadmin.mediaCount + data.count;
+            ezyadmin.mediaTotal = data.total;
+            $('#mediaCountText').text(ezyadmin.mediaCount);
+            $('#totalMediaText').text(ezyadmin.formatTotalResults(data.total));
+            ezyadmin.lastNextPageToken = data.pageToken.next;
+            if (data.continuation.hasNext) {
+                $('#loadMoreMediaButton').removeClass('d-none');
+            } else {
+            	$('#loadMoreMediaButton').addClass('d-none');
+            }
+        },
+        error: function(data, e) {
+            ezyadmin.processGetApiErrors(data);
+        }
+    });
+}
+
+ezyadmin.appendToMediaListTable = function(mediaList, toHead, replace) {
+	if (ezyadmin.mediaDisplayType === 'LIST') {
+		ezyadmin.renderMediaList();
+		return;
+	}
+	if (ezyadmin.isMediaDateGroupedSortOrder()) {
+		$('#mediaListBody').html(
+			ezyadmin.buildMediaListBodyHtml(
+				ezyadmin.getMediaListForCurrentSortOrder()
+			)
+		);
+		return;
+	}
+    var html = ezyadmin.buildMediaListBodyHtml(mediaList);
+    var mediaListBody = $('#mediaListBody');
+    if (replace) {
+    	mediaListBody.html(html);
+    } else {
+    	mediaListBody.html(toHead ? html + mediaListBody.html() : mediaListBody.html() + html);
+    }
+}
+
+ezyadmin.renderMediaList = function() {
+	$('#mediaListBody').html(
+		ezyadmin.buildMediaListBodyHtml(
+			ezyadmin.getMediaListForCurrentSortOrder()
+		)
+	);
+	ezyadmin.updateMediaListToggleCheckboxState();
+}
+
+ezyadmin.isMediaDateGroupedSortOrder = function() {
+	return !ezyadmin.searchMediaSortOrder
+		|| ezyadmin.searchMediaSortOrder === 'ID_ASC'
+		|| ezyadmin.searchMediaSortOrder === 'ID_DESC';
+}
+
+ezyadmin.getMediaListForCurrentSortOrder = function() {
+	if (!ezyadmin.searchMediaSortOrder) {
+		return ezyadmin.getMediaListSortedByIdDesc();
+	}
+	if (ezyadmin.searchMediaSortOrder === 'ID_ASC') {
+		return ezyadmin.getMediaListSortedByIdAsc();
+	}
+	if (ezyadmin.searchMediaSortOrder === 'ID_DESC') {
+		return ezyadmin.getMediaListSortedByIdDesc();
+	}
+	return ezyadmin.mediaList.slice();
+}
+
+ezyadmin.getMediaListSortedByIdDesc = function() {
+	return Object.values(ezyadmin.mediaById)
+		.sort((a, b) => b.id - a.id);
+}
+
+ezyadmin.getMediaListSortedByIdAsc = function() {
+	return Object.values(ezyadmin.mediaById)
+		.sort((a, b) => a.id - b.id);
+}
+
+ezyadmin.buildMediaListItemHtml = function(media) {
+	var replaced = ezyadmin.replacedMediaById[media.id];
+	var mediaUrl = ezyadmin.extractMediaUrl(media);
+	if (replaced) {
+		mediaUrl = ezyadmin.extractMediaUrlAddNowAsVersion(media);
+	}
+	var internalMedia = ezyadmin.isInternalMediaUrl(mediaUrl);
+	var deleteButtonHtml = (media.status != 'REMOVED' && media.status != 'DELETED') || ezyadmin.allowPermanentlyDeleteMedia
+		? `<span class="text-danger delete-button" aria-hidden="true" onclick="ezyadmin.onFastDeleteMediaClick(${media.id});">&times;</span>`
+		: '';
+	return `
+			<li id="mediaItem${media.id}" role="button"
+				onclick="ezyadmin.showMediaDetails(${media.id});"
+				onmouseover="ezyadmin.onMediaMouseOver(this, ${media.id});">
+				${media.type === 'IMAGE' || media.type === 'AVATAR' ? `
+					<img src="${mediaUrl}" alt="${media.originalName}" class="wh-150px img-thumbnail">
+					${deleteButtonHtml}
+					<input type="checkbox" name="mediaItemCheckbox" class="media-item-checkbox"
+						   ${ezyadmin.isMediaItemChecked(media.id) ? 'checked' : ''}
+						   onclick="ezyadmin.onMediaItemCheckboxClick(this, ${media.id})">
+				` : (media.type === 'VIDEO' && internalMedia) ? `
+					<video class="video-thumbnail">
+						<source src="${mediaUrl}" type="video/mp4">
+						<source src="${mediaUrl}" type="video/ogg">
+						Your browser does not support the video tag.
+					</video>
+					${deleteButtonHtml}
+					<input type="checkbox" name="mediaItemCheckbox" class="media-item-checkbox video-item-checkbox"
+						   ${ezyadmin.isMediaItemChecked(media.id) ? 'checked' : ''}
+						   onclick="ezyadmin.onMediaItemCheckboxClick(this, ${media.id})">
+				` : (media.type === 'AUDIO' && internalMedia) ? `
+					<div class="d-flex justify-content-center">
+						<div class="file-thumbnail audio-thumbnail">
+							<audio controls>
+								<source src="${mediaUrl}" type="audio/mpeg">
+								<source src="${mediaUrl}" type="audio/ogg">
+								Your browser does not support the audio tag.
+							</audio>
+							<span class="text-dark-always">${media.originalName}</span>
+						</div>
+						${deleteButtonHtml}
+						<input type="checkbox" name="mediaItemCheckbox" class="media-item-checkbox"
+							   ${ezyadmin.isMediaItemChecked(media.id) ? 'checked' : ''}
+							   onclick="ezyadmin.onMediaItemCheckboxClick(this, ${media.id})">
+					</div>
+				` : `
+					<div class="d-flex justify-content-center">
+						<div class="file-thumbnail">
+							<i class="far fa-file text-dark-always"></i>
+							<div><span class="text-dark-always">${media.originalName}</span></div>
+						</div>
+						${deleteButtonHtml}
+						<input type="checkbox" name="mediaItemCheckbox" class="media-item-checkbox"
+							   ${ezyadmin.isMediaItemChecked(media.id) ? 'checked' : ''}
+							   onclick="ezyadmin.onMediaItemCheckboxClick(this, ${media.id})">
+					</div>
+				`}
+			</li>`;
+}
+
+ezyadmin.buildGroupedMediaListBodyHtml = function(mediaList) {
+	var html = '';
+	var currentDateKey = '';
+	mediaList.forEach((media) => {
+		var dateKey = ezyadmin.getMediaCreatedDateKey(media);
+		if (dateKey !== currentDateKey) {
+			currentDateKey = dateKey;
+			html += `
+				<li class="text-left font-weight-bold pt-2 pb-1"
+					style="grid-column: 1 / -1;">
+					${ezyadmin.getMediaCreatedDateLabel(media)}
+				</li>`;
+		}
+		html += ezyadmin.buildMediaListItemHtml(media);
+	});
+	return html;
+}
+
+ezyadmin.buildListGroupedMediaListBodyHtml = function(mediaList) {
+	var groups = [];
+	var currentGroup = null;
+	mediaList.forEach((media) => {
+		var dateKey = ezyadmin.getMediaCreatedDateKey(media);
+		if (!currentGroup || currentGroup.dateKey !== dateKey) {
+			currentGroup = {
+				dateKey: dateKey,
+				label: ezyadmin.getMediaCreatedDateLabel(media),
+				items: []
+			};
+			groups.push(currentGroup);
+		}
+		currentGroup.items.push(media);
+	});
+	var html = '';
+	groups.forEach((group, index) => {
+		var rowsHtml = group.items
+			.map((mediaItem) => ezyadmin.buildListMediaListItemHtml(mediaItem))
+			.join('');
+		html += `
+			<div class="media-list-section">
+				<div class="media-list-date-label">${group.label}</div>
+				${ezyadmin.buildListMediaTableHtml(rowsHtml, index === 0)}
+			</div>`;
+	});
+	return `<li class="media-list-display-list">${html}</li>`;
+}
+
+ezyadmin.buildListTableHtml = function(mediaList) {
+	var rowsHtml = mediaList
+		.map((mediaItem) => ezyadmin.buildListMediaListItemHtml(mediaItem))
+		.join('');
+	return `
+		<li class="media-list-display-list">
+			${ezyadmin.buildListMediaTableHtml(rowsHtml, true)}
+		</li>`;
+}
+
+ezyadmin.buildListMediaTableHtml = function(rowsHtml, includeHeader) {
+	return `
+		<div class="media-list-table">
+			<table class="table table-hover table-sm">
+				<colgroup>
+					<col class="media-column">
+					<col class="owner-column">
+					<col class="type-column">
+					<col class="size-column">
+					<col class="updated-at-column">
+					<col class="action-column">
+				</colgroup>
+				${includeHeader ? `
+					<thead>
+						<tr>
+							<th>
+								<div class="media-list-header-title">
+									<input type="checkbox" class="media-list-toggle-checkbox"
+										   onclick="ezyadmin.onMediaListToggleCheckboxClick(this);">
+									<span>${ezyadmin.messages.name}</span>
+								</div>
+							</th>
+							<th>${ezyadmin.messages.upload_by}</th>
+							<th class="text-center">${ezyadmin.messages.type}</th>
+							<th class="text-center">${ezyadmin.messages.file_size}</th>
+							<th class="text-center">${ezyadmin.messages.updated_at}</th>
+							<th class="text-center">${ezyadmin.messages.action}</th>
+						</tr>
+					</thead>
+				` : ''}
+				<tbody>
+					${rowsHtml}
+				</tbody>
+			</table>
+		</div>`;
+}
+
+ezyadmin.buildListMediaListItemHtml = function(media) {
+	return `
+		<tr id="mediaItem${media.id}" role="button"
+			onclick="ezyadmin.showMediaDetails(${media.id});"
+			onmouseover="ezyadmin.onMediaMouseOver(this, ${media.id});">
+			<td>${ezyadmin.buildListMediaCellHtml(media)}</td>
+			<td>${ezyadmin.buildMediaOwnerCellHtml(media)}</td>
+			<td class="text-center"><span class="media-list-cell-text">${ezyadmin.getI18nMessage(media.type?.toLowerCase() || '')}</span></td>
+			<td class="text-center"><span class="media-list-cell-text">${ezyadmin.toCapacityString(media.size || 0)}</span></td>
+			<td class="text-center"><span class="media-list-cell-text">${ezyadmin.formatTimeStamp(media.updatedAt || media.createdAt)}</span></td>
+			<td class="text-center">${ezyadmin.buildListMediaActionHtml(media)}</td>
+		</tr>`;
+}
+
+ezyadmin.buildListMediaCellHtml = function(media) {
+	return `
+		<div class="media-list-item-title">
+			<input type="checkbox" name="mediaItemCheckbox" class="media-item-checkbox"
+				   ${ezyadmin.isMediaItemChecked(media.id) ? 'checked' : ''}
+				   onclick="ezyadmin.onMediaItemCheckboxClick(this, ${media.id})">
+			${ezyadmin.buildListMediaIconHtml(media)}
+			<span class="media-list-item-name">${media.originalName || ''}</span>
+		</div>`;
+}
+
+ezyadmin.buildListMediaIconHtml = function(media) {
+	var replaced = ezyadmin.replacedMediaById[media.id];
+	var mediaUrl = replaced
+		? ezyadmin.extractMediaUrlAddNowAsVersion(media)
+		: ezyadmin.extractMediaUrl(media);
+	if (media.type === 'IMAGE' || media.type === 'AVATAR') {
+		return `
+			<span class="media-list-item-icon">
+				<img src="${mediaUrl}" alt="${media.originalName || ''}">
+			</span>`;
+	}
+	var iconClass = 'far fa-file';
+	if (media.type === 'VIDEO') {
+		iconClass = 'fas fa-video';
+	} else if (media.type === 'AUDIO') {
+		iconClass = 'fas fa-music';
+	}
+	return `
+		<span class="media-list-item-icon">
+			<i class="${iconClass} text-dark-always"></i>
+		</span>`;
+}
+
+ezyadmin.buildMediaOwnerCellHtml = function(media) {
+	var ownerHtml = ezyadmin.getMediaOwnerHtml(media);
+	if (ownerHtml) {
+		return ownerHtml;
+	}
+	return '<span class="media-list-cell-text muted">-</span>';
+}
+
+ezyadmin.buildListMediaActionHtml = function(media) {
+	var deleteAble = (media.status != 'REMOVED' && media.status != 'DELETED')
+		|| ezyadmin.allowPermanentlyDeleteMedia;
+	if (!deleteAble) {
+		return '';
+	}
+	return `
+		<button type="button" class="btn btn-link text-danger p-0 media-list-action-button"
+			title="${ezyadmin.messages.trash}"
+			aria-label="${ezyadmin.messages.trash}"
+			onclick="ezyadmin.onFastDeleteMediaClick(${media.id}); event.stopPropagation();">
+			<i class="far fa-trash-alt"></i>
+		</button>`;
+}
+
+ezyadmin.isMediaItemChecked = function(mediaId) {
+	return ezyadmin.checkedMediaItemIds.indexOf(mediaId) >= 0;
+}
+
+ezyadmin.getMediaOwnerHtml = function(media) {
+	if (media.ownerAdmin) {
+		var profileUrl = `/admins/${media.ownerAdmin.username}${ezyadmin.lang ? `?lang=${ezyadmin.lang}` : ''}`;
+		return `<a class="media-list-cell-text" href="${profileUrl}" onclick="event.stopPropagation();">${media.ownerAdmin.name} (${ezyadmin.messages.administrator.toLowerCase()})</a>`;
+	}
+	if (media.ownerUser) {
+		var profileUrl = `/users/${media.ownerUser.username}${ezyadmin.lang ? `?lang=${ezyadmin.lang}` : ''}`;
+		return `<a class="media-list-cell-text" href="${profileUrl}" onclick="event.stopPropagation();">${media.ownerUser.name} (${ezyadmin.messages.user.toLowerCase()})</a>`;
+	}
+	return '';
+}
+
+ezyadmin.getMediaCreatedDateKey = function(media) {
+	return ezyadmin.formatTimeStampDate(media.createdAt, 'YYYY-MM-DD');
+}
+
+ezyadmin.getMediaCreatedDateLabel = function(media) {
+	return ezyadmin.formatTimeStampDate(media.createdAt);
+}
+
+ezyadmin.buildMediaListBodyHtml = function(mediaList) {
+	if (ezyadmin.mediaDisplayType === 'LIST') {
+		return ezyadmin.buildListMediaListBodyHtml(mediaList);
+	}
+	if (ezyadmin.isMediaDateGroupedSortOrder()) {
+		return ezyadmin.buildGroupedMediaListBodyHtml(mediaList);
+	}
+    var html = '';
+    mediaList.forEach((media) => {
+        html += ezyadmin.buildMediaListItemHtml(media);
+    });
+    return html;
+}
+
+ezyadmin.buildListMediaListBodyHtml = function(mediaList) {
+	if (ezyadmin.isMediaDateGroupedSortOrder()) {
+		return ezyadmin.buildListGroupedMediaListBodyHtml(mediaList);
+	}
+	return ezyadmin.buildListTableHtml(mediaList);
+}
+
+$('#loadMoreMediaButton').on('click', (e) => {
+    ezyadmin.fetchMediaList();
+});
+
+// ================ media checkbox ===========
+ezyadmin.checkedMediaItemIds = [];
+ezyadmin.onMediaItemCheckedListeners = [];
+ezyadmin.callOnMediaItemCheckedListeners = function() {
+	ezyadmin.onMediaItemCheckedListeners.forEach((it) => {
+		it(ezyadmin.checkedMediaItemIds);
+	});
+}
+
+ezyadmin.onMediaItemCheckboxClick = function(e, mediaId) {
+	window.event.stopPropagation();
+	var checked = $(e).prop('checked');
+	ezyadmin.setMediaItemCheckboxChecked(mediaId, checked);
+	ezyadmin.callOnMediaItemCheckedListeners();
+}
+
+ezyadmin.setMediaItemCheckboxChecked = function(mediaId, checked) {
+	if (checked) {
+		if (ezyadmin.checkedMediaItemIds.indexOf(mediaId) < 0) {
+			ezyadmin.checkedMediaItemIds.push(mediaId);
+		}
+	} else {
+		ezyadmin.removeItemFromList(ezyadmin.checkedMediaItemIds, mediaId);
+	}
+}
+
+ezyadmin.onMediaListToggleCheckboxClick = function(e) {
+	window.event.stopPropagation();
+	var checked = $(e).prop('checked');
+	ezyadmin.getMediaListForCurrentSortOrder().forEach((media) => {
+		ezyadmin.setMediaItemCheckboxChecked(media.id, checked);
+	});
+	$('.media-item-checkbox').prop('checked', checked);
+	ezyadmin.callOnMediaItemCheckedListeners();
+}
+
+ezyadmin.updateMediaListToggleCheckboxState = function() {
+	var mediaList = ezyadmin.getMediaListForCurrentSortOrder();
+	var checkedCount = 0;
+	mediaList.forEach((media) => {
+		if (ezyadmin.isMediaItemChecked(media.id)) {
+			++checkedCount;
+		}
+	});
+	$('.media-list-toggle-checkbox')
+		.prop('checked', mediaList.length > 0 && checkedCount === mediaList.length)
+		.prop('indeterminate', checkedCount > 0 && checkedCount < mediaList.length);
+}
+
+ezyadmin.defaultHandleSelectedMediaIds = function() {
+	ezyadmin.selectedMediaList = [];
+	ezyadmin.checkedMediaItemIds.forEach((checkedMediaId) => {
+		var selectedMedia = ezyadmin.mediaById[checkedMediaId];
+		if (selectedMedia) {
+			ezyadmin.selectedMediaList.push(selectedMedia);
+		}
+	});
+	var handler = ezyadmin.mediaSelectedHandlers[ezyadmin.currentMediaSelectedCommand];
+	if (handler && handler.selectMultipleCallback) {
+		handler.selectMultipleCallback(ezyadmin.selectedMediaList);
+	} else {
+		ezyadmin.selectedMediaList.forEach((checkedMedia) => {
+			ezyadmin.selectedMedia = checkedMedia;
+			ezyadmin.selectMedia();
+		});
+	}
+	ezyadmin.checkedMediaItemIds = [];
+	ezyadmin.selectedMediaList = [];
+}
+
+ezyadmin.onSelectMediasButtonClicked = function() {
+	if (ezyadmin.handleSelectedMediaIds) {
+		ezyadmin.handleSelectedMediaIds(ezyadmin.checkedMediaItemIds);
+	} else {
+		ezyadmin.defaultHandleSelectedMediaIds();
+	}
+	ezyadmin.closeMediaModal();
+}
+
+// ================ drag drop to add ===========
+$(document).ready(function () {
+    var mediaListBody = $('#mediaListBody');
+
+    mediaListBody.on('dragover', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).addClass('dragover');
+    });
+
+    mediaListBody.on('dragleave', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).removeClass('dragover');
+    });
+
+    mediaListBody.on('drop', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).removeClass('dragover');
+
+        var files = e.originalEvent.dataTransfer.files;
+        for (var i = 0; i < files.length; i++) {
+            ezyadmin.addNewMedia(files[i], false);
+        }
+    });
+});
+
+// ================== hover ===============
+$(document).ready(function(){
+	$(document).mousedown(function(event) {
+		if (event.which === 1) {
+			ezyadmin.isMouseDown = true;
+		}
+	});
+
+	$(document).mouseup(function(event) {
+		if (event.which === 1) { // Left mouse button
+			ezyadmin.isMouseDown = false;
+		}
+	});
+});
+ezyadmin.onMediaMouseOver = function(e, mediaId) {
+	if (ezyadmin.isMouseDown) {
+		if (ezyadmin.checkedMediaItemIds.indexOf(mediaId) < 0) {
+			ezyadmin.checkedMediaItemIds.push(mediaId);
+		}
+		var checkbox = $(e).find(".media-item-checkbox");
+		checkbox.prop("checked", true);
+		ezyadmin.callOnMediaItemCheckedListeners();
+	}
+}
+
+// ================ bulk media selection feedback ===========
+ezyadmin.changeSelectedMediaCount = function() {
+	var count = ezyadmin.checkedMediaItemIds.length;
+	$('.selected-media-count-text').text(
+		ezyadmin.messages.selected_pcount_medias
+			.replace('{0}', ezyadmin.formatNumberWithCommas(count))
+	);
+	if (count) {
+		$('.selected-media-count-text-wrapper').removeClass('d-none');
+	} else {
+		$('.selected-media-count-text-wrapper').addClass('d-none');
+	}
+}
+
+ezyadmin.toggleBulkMediaActionButtons = function() {
+	var count = ezyadmin.checkedMediaItemIds.length;
+	if (count) {
+		$('#selectMediasButton').removeClass('d-none');
+		$('.reduce-selected-media-files-button-wrapper').removeClass('d-none');
+	} else {
+		$('#selectMediasButton').addClass('d-none');
+		$('.reduce-selected-media-files-button-wrapper').addClass('d-none');
+	}
+}
+
+ezyadmin.onMediaItemCheckedListeners.push(ezyadmin.changeSelectedMediaCount);
+ezyadmin.onMediaItemCheckedListeners.push(ezyadmin.toggleBulkMediaActionButtons);
+ezyadmin.onMediaItemCheckedListeners.push(ezyadmin.updateMediaListToggleCheckboxState);
+
+ezyadmin.fetchMediaListAndClearCheckedMediaItems = function() {
+	ezyadmin.checkedMediaItemIds = [];
+	$('.media-list-toggle-checkbox').prop('checked', false);
+	$('.media-item-checkbox').prop('checked', false);
+	ezyadmin.callOnMediaItemCheckedListeners();
+	ezyadmin.fetchMediaList(true);
+}
+</script>
+</body>
+</html>

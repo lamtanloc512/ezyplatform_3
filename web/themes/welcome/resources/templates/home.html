@@ -1,0 +1,37 @@
+<!--
+ ~ Copyright 2022 youngmonkeys.org
+ ~ 
+ ~ Licensed under the ezyplatform, Version 1.0.0 (the "License");
+ ~ you may not use this file except in compliance with the License.
+ ~ You may obtain a copy of the License at
+ ~ 
+ ~     https://youngmonkeys.org/licenses/ezyplatform-1.0.0.txt
+ ~ 
+ ~ Unless required by applicable law or agreed to in writing, software
+ ~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~ See the License for the specific language governing permissions and
+ ~ limitations under the License.
+-->
+
+<!DOCTYPE html>
+<html
+        xmlns="http://www.w3.org/1999/xhtml"
+        xmlns:th="http://www.thymeleaf.org"
+        xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+        layout:decorate="~{ezytheme}">
+<body>
+<div layout:fragment="content" class="row">
+    <div class="col-12 d-flex flex-column align-items-center welcome-content">
+        <span class="d-flex align-items-center">
+            <h5 class="text-warning"><i class="fas fa-hand-spock"></i></h5>
+            <h3 class="pl-1" th:text="#{welcome.title}"></h3>
+        </span>
+        <span class="text-secondary" th:text="#{welcome.content}"></span>
+        <span class="mt-5" th:utext="#{welcome.goto_admin}">Go to <strong>Administrator</strong> to install a new Theme</span>
+        <span class="text-secondary mt-3" th:text="#{welcome.or}">Or</span>
+        <a class="btn btn-primary mt-3" href="https://ezyplatform.com/faq" target="_blank" th:text="#{welcome.need_a_help}">Need a Help?</a>
+    </div>
+</div>
+</body>
+</html>

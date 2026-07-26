@@ -1,0 +1,39 @@
+<!--
+ ~ Copyright 2022 youngmonkeys.org
+ ~
+ ~ Licensed under the ezyplatform, Version 1.0.0 (the "License");
+ ~ you may not use this file except in compliance with the License.
+ ~ You may obtain a copy of the License at
+ ~
+ ~     https://youngmonkeys.org/licenses/ezyplatform-1.0.0.txt
+ ~
+ ~ Unless required by applicable law or agreed to in writing, software
+ ~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~ See the License for the specific language governing permissions and
+ ~ limitations under the License.
+-->
+
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<script th:fragment="scripts">
+ezyadmin.buildStarsHtml = (ratingScore, ratingCount, url) => {
+    var score = ratingScore || 0;
+    var iconStyle = 'style="vertical-align: middle"';
+    var starIcon = (cls) => `<i class="${cls} text-warning" ${iconStyle}></i>`;
+    var stars = [1, 2, 3, 4, 5].map(i => {
+        if (i <= score) return starIcon('fas fa-star');
+        if (i - 0.5 <= score) return starIcon('fas fa-star-half-alt');
+        return starIcon('far fa-star');
+    }).join('');
+    var count = (ratingCount || 0).toLocaleString();
+    return `<a href="${url}" target="_blank" class="text-decoration-none">
+        ${stars}
+        <span class="ml-1 text-muted" style="vertical-align: middle">(${count})</span>
+    </a>`;
+}
+</script>
+</body>
+</html>

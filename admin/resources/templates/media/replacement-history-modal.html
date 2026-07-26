@@ -1,0 +1,166 @@
+<!--
+ ~ Copyright 2026 youngmonkeys.org
+ ~
+ ~ Licensed under the ezyplatform, Version 1.0.0 (the "License");
+ ~ you may not use this file except in compliance with the License.
+ ~ You may obtain a copy of the License at
+ ~
+ ~     https://youngmonkeys.org/licenses/ezyplatform-1.0.0.txt
+ ~
+ ~ Unless required by applicable law or agreed to in writing, software
+ ~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~ See the License for the specific language governing permissions and
+ ~ limitations under the License.
+-->
+
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="content">
+	<div class="modal fade" id="replacement-history-modal">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">[[#{replace_history}]]</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="table-responsive p-0">
+						<table id="replacementHistoryListTable" class="table table-bordered table-hover text-nowrap align-middle-cells">
+							<thead>
+							<tr>
+								<th class="text-center pl-2p5">#</th>
+								<th>[[#{file_name}]]</th>
+							</tr>
+							</thead>
+							<tbody id="replacementHistoryListBody">
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div class="modal-footer justify-content-between">
+					<span>
+						<span id="replacementHistoryCountText">0</span>
+						[[${#strings.toLowerCase(#messages.msg('of'))}]]
+						<span id="totalReplacementHistoryText">0</span>
+					</span>
+					<ul class="pagination pagination-sm m-0">
+						<li class="page-item">
+							<button class="page-link" id="replacementHistoryFirstPageButton">
+								<i class="fas fa-arrow-circle-left pl-1 pr-1"></i>
+							</button>
+						</li>
+						<li class="page-item">
+							<button class="page-link" id="replacementHistoryPrevPageButton">[[#{prev}]]</button>
+						</li>
+						<li class="page-item">
+							<button class="page-link" id="replacementHistoryNextPageButton">[[#{next}]]</button>
+						</li>
+						<li class="page-item">
+							<button class="page-link" id="replacementHistoryLastPageButton">
+								<i class="fas fa-arrow-circle-right pl-1 pr-1"></i>
+							</button>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+</th:block>
+<script th:fragment="scripts" th:inline="javascript">
+/*<![CDATA[*/
+ezyadmin.accessibleUris['/api/v1/media/{id}/replace-history'] = /*[[${adminRoles.isAccessible('/api/v1/media/{id}/replace-history')}]]*/;
+/*]]>*/
+
+// ======================= media replacement history =============
+ezyadmin.onMediaReplacementHistoryClick = function() {
+	ezyadmin.fetchMediaReplacementHistory();
+	$('#replacement-history-modal').modal('show');
+}
+
+$('#replacementHistoryFirstPageButton').click(() => {
+	ezyadmin.fetchMediaReplacementHistory('first');
+});
+$('#replacementHistoryLastPageButton').click(() => {
+	ezyadmin.fetchMediaReplacementHistory('last');
+});
+$('#replacementHistoryNextPageButton').click(() => {
+	ezyadmin.fetchMediaReplacementHistory('next');
+});
+$('#replacementHistoryPrevPageButton').click(() => {
+	ezyadmin.fetchMediaReplacementHistory('prev');
+});
+
+ezyadmin.fetchMediaReplacementHistory = function(action) {
+	var queryString = '';
+	if (action == 'next') {
+		if (ezyadmin.lastReplacementHistoryPageToken && ezyadmin.lastReplacementHistoryPageToken.next) {
+			queryString += '&nextPageToken=' + ezyadmin.lastReplacementHistoryPageToken.next;
+		} else {
+			return;
+		}
+	} else if (action == 'prev') {
+		if (ezyadmin.lastReplacementHistoryPageToken && ezyadmin.lastReplacementHistoryPageToken.prev) {
+			queryString += '&prevPageToken=' + ezyadmin.lastReplacementHistoryPageToken.prev;
+		} else {
+			return;
+		}
+	} else if (action == 'last') {
+		queryString += '&lastPage=true';
+	}
+	var mediaId = ezyadmin.selectedMediaId;
+	var url = ezyadmin.accessibleUris['/api/v1/media/{id}/replace-history']
+		? '/api/v1/media/' + mediaId + '/replace-history'
+		: '/api/v1/me/media/' + mediaId + '/replace-history';
+	ezyadmin.showLoadingScreen();
+	$.ajax({
+		url: url + '?limit=30' + queryString,
+		type: 'GET',
+		dataType: 'json'
+	})
+	.done(function(data) {
+		ezyadmin.hideLoadingScreen();
+		$('#replacementHistoryCountText').text(data.count);
+		$('#totalReplacementHistoryText').text(ezyadmin.formatTotalResults(data.total));
+		ezyadmin.lastReplacementHistoryPageToken = data.pageToken;
+		$('#replacementHistoryListBody').html(ezyadmin.buildReplacementHistoryListBodyHtml(data.items));
+		if (data.continuation.hasNext) {
+			$('#replacementHistoryNextPageButton').removeClass('text-secondary');
+		} else {
+			$('#replacementHistoryNextPageButton').addClass('text-secondary');
+		}
+		if (data.continuation.hasPrevious) {
+			$('#replacementHistoryPrevPageButton').removeClass('text-secondary');
+		} else {
+			$('#replacementHistoryPrevPageButton').addClass('text-secondary');
+		}
+	})
+	.fail(function(e) {
+		ezyadmin.hideLoadingScreen();
+		ezyadmin.processGetApiErrors(e);
+	});
+}
+
+ezyadmin.buildReplacementHistoryListBodyHtml = function(items) {
+	var html = '';
+	items.forEach((item) => {
+		html += `
+			<tr>
+				<td class="text-center pl-2p5">${item.id}</td>
+				<td>
+					<a href="/api/v1/media/${item.fileName}" target="_blank">
+						${item.fileName}
+					</a>
+				</td>
+			</tr>
+		`;
+	});
+	return html;
+}
+</script>
+</body>
+</html>

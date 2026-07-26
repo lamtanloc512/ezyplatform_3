@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ~ Copyright 2022 youngmonkeys.org
+ ~
+ ~ Licensed under the ezyplatform, Version 1.0.0 (the "License");
+ ~ you may not use this file except in compliance with the License.
+ ~ You may obtain a copy of the License at
+ ~
+ ~     https://youngmonkeys.org/licenses/ezyplatform-1.0.0.txt
+ ~
+ ~ Unless required by applicable law or agreed to in writing, software
+ ~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~ See the License for the specific language governing permissions and
+ ~ limitations under the License.
+-->
+<settings
+		xsi:schemaLocation="http://www.tvd12.com/schema/ezyfox/settings
+  		ezy-settings-1.0.0.xsd"
+		xmlns="http://www.tvd12.com/schema/ezyfox/settings"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+	<node-name>localhost</node-name>
+
+	<streaming>
+		<enable>false</enable>
+	</streaming>
+
+	<socket>
+		<port>3005</port>
+		<active>true</active>
+		<ssl-active>true</ssl-active>
+		<max-request-size>2048</max-request-size>
+		<codec-creator>com.tvd12.ezyfox.codec.MsgPackCodecCreator</codec-creator>
+	</socket>
+
+	<udp>
+		<port>2611</port>
+		<address>0.0.0.0</address>
+		<active>true</active>
+		<max-request-size>1024</max-request-size>
+	</udp>
+
+	<web-socket>
+		<port>2208</port>
+		<active>true</active>
+		<ssl-port>2812</ssl-port>
+		<ssl-config>
+			<file>ssl-config.properties</file>
+			<loader>com.tvd12.ezyfoxserver.ssl.EzySimpleSslConfigLoader</loader>
+			<context-factory-builder>com.tvd12.ezyfoxserver.ssl.EzySimpleSslContextFactoryBuilder</context-factory-builder>
+		</ssl-config>
+		<max-frame-size>2048</max-frame-size>
+		<management-enable>true</management-enable>
+		<codec-creator>com.tvd12.ezyfox.codec.JacksonCodecCreator</codec-creator>
+	</web-socket>
+
+	<administrators>
+		<administrator>
+			<username>admin</username>
+			<password>admin</password>
+			<access-token>admin</access-token>
+		</administrator>
+	</administrators>
+
+	<session-management>
+		<session-max-idle-time>60</session-max-idle-time>
+		<session-max-waiting-time>15</session-max-waiting-time>
+		<session-max-request-per-second>
+			<value>300</value>
+			<action>DISCONNECT_SESSION</action>
+		</session-max-request-per-second>
+	</session-management>
+
+	<zones>
+		<zone>
+			<name>admin</name>
+			<config-file>admin-zone-settings.xml</config-file>
+			<active>true</active>
+		</zone>
+		<zone>
+			<name>chat</name>
+			<config-file>chat-zone-settings.xml</config-file>
+			<active>true</active>
+		</zone>
+		<zone>
+			<name>game</name>
+			<config-file>game-zone-settings.xml</config-file>
+			<active>true</active>
+		</zone>
+		<zone>
+			<name>user</name>
+			<config-file>user-zone-settings.xml</config-file>
+			<active>true</active>
+		</zone>
+	</zones>
+</settings>

@@ -1,0 +1,271 @@
+<!--
+ ~ Copyright 2026 youngmonkeys.org
+ ~
+ ~ Licensed under the ezyplatform, Version 1.0.0 (the "License");
+ ~ you may not use this file except in compliance with the License.
+ ~ You may obtain a copy of the License at
+ ~
+ ~     https://youngmonkeys.org/licenses/ezyplatform-1.0.0.txt
+ ~
+ ~ Unless required by applicable law or agreed to in writing, software
+ ~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~ See the License for the specific language governing permissions and
+ ~ limitations under the License.
+-->
+
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="content">
+	<div class="modal fade pt-4rem" id="add-new-media">
+		<div class="modal-dialog modal-md">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">[[#{add_new_media}]]</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<form id="addNewMediaForm" method="post" enctype="multipart/form-data">
+						<label id="addMediaFileErrorLabel" class="col-form-label text-danger pt-0 d-none" for="addMediaFile">
+							<i class="far fa-times-circle"></i> <span class="line-break-anywhere" id="addMediaFileError">[[#{invalid}]]</span>
+						</label>
+						<div class="input-group">
+							<div class="custom-file">
+								<input name="file" type="file" id="addMediaFile"
+									   class="custom-file-input" multiple>
+								<label class="custom-file-label" for="addMediaFile" id="addMediaFileLabel">
+									[[#{select_a_file}]]
+								</label>
+							</div>
+						</div>
+						<div class="d-flex align-items-center mt-2">
+							<input type="checkbox" name="notPublicMedia" id="notPublicMedia" class="form-check wh-1rem">
+							<span class="ml-2">[[#{not_public_for_every_user}]]</span>
+						</div>
+						<div class="d-flex justify-content-center py-4">
+							<h5>[[#{or_add_from_url}]]</h5>
+						</div>
+						<div class="form-group row">
+							<label for="addMediaUrlType" class="col-3 col-form-label">
+								[[#{type}]] (<span class="text-danger">*</span>):
+							</label>
+							<div class="col-9">
+								<label class="col-form-label text-danger d-none" id="addMediaUrlTypeErrorLabel" for="addMediaUrlType">
+									<i class="far fa-times-circle"></i> <span id="addMediaUrlTypeError"></span>
+								</label>
+								<select name="type" id="addMediaUrlType" class="form-control" aria-label="Type Select"
+										onchange="ezyadmin.onAddMediaTypeChanged(this);">
+									<option th:each="commonMediaType : ${commonMediaTypes}"
+											th:value="${commonMediaType}">
+										[[#{${commonMediaType.toString().toLowerCase()}}]]
+									</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label for="addMediaUrlName" class="col-3 col-form-label">
+								[[#{name}]] (<span class="text-danger">*</span>):
+							</label>
+							<div class="col-9">
+								<label class="col-form-label text-danger d-none" id="addMediaUrlNameErrorLabel" for="addMediaUrlName">
+									<i class="far fa-times-circle"></i> <span id="addMediaUrlNameError"></span>
+								</label>
+								<input type="text" name="originalName" id="addMediaUrlName"
+									   class="form-control" th:placeholder="#{name}"
+									   onkeydown="ezyadmin.onKeyDownToAddNewMedia()">
+							</div>
+						</div>
+						<div class="form-group row mb-0">
+							<label for="addMediaUrlValue" class="col-3 col-form-label">
+								[[#{url}]] (<span class="text-danger">*</span>):
+							</label>
+							<div class="col-9">
+								<label class="col-form-label text-danger d-none" id="addMediaUrlValueErrorLabel" for="addMediaUrlValue">
+									<i class="far fa-times-circle"></i> <span id="addMediaUrlValueError"></span>
+								</label>
+								<input type="text" name="url" id="addMediaUrlValue"
+									   class="form-control" th:placeholder="#{url}"
+									   onkeydown="ezyadmin.onKeyDownToAddNewMedia('add')">
+							</div>
+						</div>
+						<div class="form-group row mt-3 mb-0" id="addMediaUrlDurationWrapper">
+							<label for="addMediaUrlDuration" class="col-3 col-form-label">
+								[[#{duration}]]
+							</label>
+							<div class="col-9">
+								<label class="col-form-label text-danger d-none" id="addMediaUrlDurationErrorLabel" for="addMediaUrlDuration">
+									<i class="far fa-times-circle"></i> <span id="addMediaUrlDurationError"></span>
+								</label>
+								<input type="text" name="durationInMinutes" id="addMediaUrlDuration"
+									   class="form-control" th:placeholder="#{time_in_minutes}"
+									   onkeydown="ezyadmin.onKeyDownToAddNewMedia('add')">
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer justify-content-between">
+					<button type="button" class="btn btn-default" data-dismiss="modal">[[#{cancel}]]</button>
+					<button type="button" class="btn btn-primary" onclick="ezyadmin.addNewMedias();">[[#{add}]]</button>
+				</div>
+			</div>
+			<!-- /.modal-content -->
+		</div>
+		<!-- /.modal-dialog -->
+	</div>
+</th:block>
+<script th:fragment="scripts">
+// ========== add new =============
+ezyadmin.addMediaView = {
+    name: 'addMedia',
+    chooseFileLabelText: $('#addMediaFileLabel').text()
+};
+bsCustomFileInput.init();
+
+$(document).ready(() => {
+	$('#addMediaFile').on('click', function() {
+    	$(this).val('');
+	});
+});
+
+ezyadmin.showAddNewMediaModal = function() {
+	ezyadmin.resetFormData({
+		addMediaUrlName: true,
+		addMediaUrlValue: true,
+		addMediaUrlDuration: true
+	});
+	$('#addMediaFileErrorLabel').addClass('d-none');
+	$('#notPublicMedia').prop('checked', false);
+	$('#add-new-media').modal('show');
+}
+
+ezyadmin.onAddMediaTypeChanged = function(e) {
+	var mediaType = $(e).val();
+	if (mediaType == 'VIDEO' || mediaType == 'AUDIO') {
+		$('#addMediaUrlDurationWrapper').removeClass('d-none');
+	} else {
+		$('#addMediaUrlDurationWrapper').addClass('d-none');
+	}
+}
+
+ezyadmin.addNewMedias = function() {
+	$('#fileErrorLabel').addClass('d-none');
+	var notPublicMedia = $('#notPublicMedia').prop('checked');
+    $.each($('#addMediaFile')[0].files, function(index, file) {
+        ezyadmin.addNewMedia(file, notPublicMedia);
+    });
+    var formData = ezyadmin.formDataToObject('addNewMediaForm');
+    delete formData.file;
+    if (formData.url.trim()) {
+		ezyadmin.addNewMediaFromUrl(formData, notPublicMedia);
+    }
+}
+
+ezyadmin.addNewMediaAsync = function(file, notPublicMedia, options) {
+    return new Promise((resolve, reject) => {
+        ezyadmin.addNewMedia(file, notPublicMedia, {
+            ...options,
+            onSuccess: (media) => resolve(media),
+            onFailed: (e) => reject(e)
+        });
+    });
+};
+
+ezyadmin.addNewMedia = function(file, notPublicMedia, options) {
+	ezyadmin.showLoadingScreen({showPercent: true});
+    var data = new FormData();
+    data.append('file', file);
+    $.ajax({
+        type: "POST",
+        enctype: 'multipart/form-data',
+        url: "/api/v1/media/add?notPublic=" + notPublicMedia,
+        data: data,
+        processData: false,
+        contentType: false,
+        cache: false,
+        xhr: function () {
+            var xhr = new window.XMLHttpRequest();
+            xhr.upload.addEventListener('progress', function(event) {
+                if (event.lengthComputable) {
+                    var percentComplete = Math.round((event.loaded / event.total) * 100);
+                    ezyadmin.setLoadingScreenPercent(percentComplete);
+                }
+            });
+            return xhr;
+        },
+        success: function (data) {
+            $('#add-new-media').modal('hide');
+            $('#addMediaFileLabel').text(ezyadmin.addMediaView.chooseFileLabelText);
+            var media = JSON.parse(data);
+            ezyadmin.mediaById[media.id] = media;
+            ezyadmin.mediaList = [media].concat(
+            	ezyadmin.mediaList.filter((item) => item.id !== media.id)
+            );
+            ezyadmin.appendToMediaListTable([media], true);
+            $('#mediaCountText').text(++ ezyadmin.mediaCount);
+            $('#totalMediaText').text(++ ezyadmin.mediaTotal);
+            ezyadmin.setLoadingScreenPercent(100);
+            ezyadmin.hideLoadingScreen();
+            var onSuccess = options?.onSuccess;
+            if (onSuccess) {
+				onSuccess(media);
+            }
+        },
+        error: function(e) {
+            ezyadmin.processUploadFileApiErrors(e, ezyadmin.addMediaView);
+            ezyadmin.hideLoadingScreen();
+            var onFailed = options?.onFailed;
+            if (onFailed) {
+            	onFailed(e);
+            }
+        }
+    });
+}
+
+ezyadmin.onKeyDownToAddNewMedia = function() {
+	if(event.key === 'Enter') {
+		var notPublicMedia = $('#notPublicMedia').prop('checked');
+		var formData = ezyadmin.formDataToObject('addNewMediaForm');
+		delete formData.file;
+		ezyadmin.addNewMediaFromUrl(formData, notPublicMedia);
+    }
+}
+
+ezyadmin.addNewMediaFromUrl = function(formData, notPublicMedia) {
+	var mediaType = formData.type;
+	formData.saveDuration = mediaType == 'VIDEO' || mediaType == 'AUDIO';
+    $.ajax({
+        type: "POST",
+        url: "/api/v1/media/add-from-url?notPublic=" + notPublicMedia,
+        contentType: 'application/json',
+        data: JSON.stringify(formData),
+        success: function (media) {
+            $('#add-new-media').modal('hide');
+            ezyadmin.mediaById[media.id] = media;
+            ezyadmin.mediaList = [media].concat(
+            	ezyadmin.mediaList.filter((item) => item.id !== media.id)
+            );
+            ezyadmin.appendToMediaListTable([media], true);
+            $('#mediaCountText').text(++ ezyadmin.mediaCount);
+            $('#totalMediaText').text(++ ezyadmin.mediaTotal);
+        },
+        error: function(e) {
+        	var formView = {
+        		addMediaUrlName: true,
+        		addMediaUrlValue: true,
+        		addMediaUrlDuration: true
+        	};
+        	var errors = e.responseJSON || {};
+        	errors.addMediaUrlName = errors.originalName;
+			errors.addMediaUrlValue = errors.url;
+			errors.addMediaUrlDuration = errors.durationInMinutes;
+            ezyadmin.processUpdateApiErrors(formView, e);
+        }
+    });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Runtime-generated, not part of the shipped install
+logs/
+upload/
+.runtime/
+docker-data/
+
+# Runtime-installed plugins/themes (fetched via admin UI, not vendored)
+admin/plugins/
+web/plugins/
+
+# OS/editor cruft
+.DS_Store

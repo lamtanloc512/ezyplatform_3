@@ -1,0 +1,238 @@
+<!--
+ ~ Copyright 2022 youngmonkeys.org
+ ~ 
+ ~ Licensed under the ezyplatform, Version 1.0.0 (the "License");
+ ~ you may not use this file except in compliance with the License.
+ ~ You may obtain a copy of the License at
+ ~ 
+ ~     https://youngmonkeys.org/licenses/ezyplatform-1.0.0.txt
+ ~ 
+ ~ Unless required by applicable law or agreed to in writing, software
+ ~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~ See the License for the specific language governing permissions and
+ ~ limitations under the License.
+-->
+
+<!DOCTYPE html>
+<html
+        xmlns="http://www.w3.org/1999/xhtml"
+        xmlns:th="http://www.thymeleaf.org"
+        xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+        layout:decorate="~{ezyadmin}">
+
+<body>
+<div layout:fragment="content">
+    <div class="px-2p5">
+        <div class="row">
+            <div class="col-lg-3 col-md-4 page-search">
+                <input type="search" class="form-control"
+                   id="mediaModelSearchKeywordInput"
+                   th:value="${mediaSearchKeyword}"
+                   th:placeholder="#{keyword}"
+                   oninput="ezyadmin.onKeydownToSearchMedia(this);"
+                   onkeydown="ezyadmin.onKeydownToSearchMedia(this);">
+            </div>
+            <div class="col-lg-3 col-md-4 page-search">
+                <input type="search" class="form-control"
+                       id="mediaModelSearchGroupNamePrefixInput"
+                       th:value="${mediaSearchGroupNamePrefix}"
+                       th:placeholder="#{group_name}"
+                       oninput="ezyadmin.onKeydownToSearchMediaGroupNamePrefix(this);"
+                       onkeydown="ezyadmin.onKeydownToSearchMediaGroupNamePrefix(this);">
+            </div>
+            <div class="col-lg-3 col-md-4 page-search">
+                <select class="form-control" id="mediaModelSearchTypeSelect"
+                        onchange="ezyadmin.onSearchMediaTypeChanged(this);">
+                    <option value="">[[#{all_type}]]</option>
+                    <option th:each="searchMediaType : ${searchMediaTypes}"
+                            th:value="${searchMediaType}"
+                            th:selected="${searchMediaType.toString() == mediaSearchType}">
+                        [[#{${searchMediaType.toString().toLowerCase()}}]]
+                    </option>
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-4 page-search">
+                <select class="form-control" id="mediaModelSearchStatusSelect"
+                        onchange="ezyadmin.onSearchMediaStatusChanged(this);">
+                    <option value="">[[#{status}]]</option>
+                    <option th:each="searchStatus : ${searchMediaStatuses}"
+                            th:value="${searchStatus}"
+                            th:selected="${searchStatus.toString() == mediaSearchStatus}">
+                        [[#{${searchStatus.toString().toLowerCase()}}]]
+                    </option>
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-4 page-search">
+                <input type="text" class="form-control"
+                       id="mediaModelSearchDatePicker"
+                       th:placeholder="#{date}">
+            </div>
+            <div class="col-lg-3 col-md-4 page-search">
+                <input type="text" class="form-control"
+                       id="mediaModelSearchTimeRangePicker"
+                       th:placeholder="#{time_range}">
+            </div>
+            <div class="col-lg-3 col-md-4 page-search">
+                <select class="form-control" id="mediaModelSearchSortOrderSelect"
+                        onchange="ezyadmin.onSearchMediaSortOrderChanged(this);">
+                    <option value="">[[#{sort_by}]]</option>
+                    <option th:each="sortOrder : ${searchMediaSortOrders}"
+                            th:value="${sortOrder}"
+                            th:selected="${sortOrder.toString() == mediaSearchSortOrder}">
+                        [[#{${'sort_by_' + sortOrder.toString().toLowerCase()}}]]
+                    </option>
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-4 page-search">
+                <select class="form-control" id="mediaModelDisplayTypeSelect"
+                        onchange="ezyadmin.onMediaDisplayTypeChanged(this);">
+                    <option value="ICONS" th:selected="${mediaSearchDisplayType == null}">
+                        [[#{display_type}]]
+                    </option>
+                    <option value="ICONS" th:selected="${mediaSearchDisplayType == 'ICONS'}">
+                        [[#{display_type_icons}]]
+                    </option>
+                    <option value="LIST" th:selected="${mediaSearchDisplayType == 'LIST'}">
+                        [[#{display_type_list}]]
+                    </option>
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-4 page-search">
+                <select class="form-control" id="mediaModelSearchLimit"
+                        onchange="ezyadmin.onSearchMediaLimitChanged(this);">
+                    <option th:value="${numberOfMediaPerPage}" selected>
+                        [[#{limit}]]
+                    </option>
+                    <option value="30">30 [[#{item_s}]]</option>
+                    <option value="50">50 [[#{item_s}]]</option>
+                    <option value="100">100 [[#{item_s}]]</option>
+                    <option value="200">200 [[#{item_s}]]</option>
+                    <option value="300">300 [[#{item_s}]]</option>
+                    <option value="400">400 [[#{item_s}]]</option>
+                    <option value="500">500 [[#{item_s}]]</option>
+                </select>
+            </div>
+            <div th:if="${allowReduceMediaFileSize}"
+                 class="col-lg-3 col-md-4 page-search reduce-selected-media-files-button-wrapper d-none">
+                <button type="button" class="btn btn-primary form-control"
+                        onclick="ezyadmin.onReduceSelectedMediaFilesClick();">
+                    [[#{reduce_file_size_button_title}]]
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="selected-media-count-text-wrapper d-none py-2">
+        <span class="selected-media-count-text"></span>
+    </div>
+    <div class="text-center media-list-page">
+        <ul class="media-list" id="mediaListBody"></ul>
+    </div>
+    <div class="d-flex flex-column text-center">
+        <span>
+            [[#{showing}]] <span id="mediaCountText">0</span>
+            [[${#strings.toLowerCase(#messages.msg('of'))}]]
+            <span id="totalMediaText">0</span>
+            [[${#strings.toLowerCase(#messages.msg('media_items'))}]]
+        </span>
+        <div class="mb-3">
+            <button class="btn btn-primary pl-5 pr-5 mt-2" id="loadMoreMediaButton">
+                [[#{load_more}]]
+            </button>
+        </div>
+    </div>
+</div>
+<script layout:fragment="scripts" th:inline="javascript">
+/*<![CDATA[*/
+ezyadmin.searchMediaKeyword = /*[[${mediaSearchKeyword}]]*/;
+ezyadmin.searchMediaGroupNamePrefix = /*[[${mediaSearchGroupNamePrefix}]]*/;
+ezyadmin.searchMediaType = /*[[${mediaSearchType}]]*/;
+ezyadmin.searchMediaStatus = /*[[${mediaSearchStatus}]]*/;
+ezyadmin.mediaDisplayType = /*[[${mediaSearchDisplayType}]]*/;
+ezyadmin.searchMediaSortOrder = /*[[${mediaSearchSortOrder}]]*/;
+ezyadmin.searchMediaCreatedAtStartInclusive = /*[[${mediaSearchCreatedAtStartInclusive}]]*/;
+ezyadmin.searchMediaCreatedAtEndInclusive = /*[[${mediaSearchCreatedAtEndInclusive}]]*/;
+/*]]>*/
+
+ezyadmin.onNewButtonClick = function() {
+    ezyadmin.showAddNewMediaModal();
+}
+
+$('#mediaModelSearchKeywordInput').val(ezyadmin.searchMediaKeyword || '');
+$('#mediaModelSearchGroupNamePrefixInput').val(ezyadmin.searchMediaGroupNamePrefix || '');
+$('#mediaModelSearchTypeSelect').val(ezyadmin.searchMediaType || '');
+$('#mediaModelSearchStatusSelect').val(ezyadmin.searchMediaStatus || '');
+$('#mediaModelSearchSortOrderSelect').val(ezyadmin.searchMediaSortOrder || '');
+$('#mediaModelDisplayTypeSelect').val(ezyadmin.mediaDisplayType);
+
+if (ezyadmin.searchMediaCreatedAtStartInclusive
+    && ezyadmin.searchMediaCreatedAtEndInclusive
+) {
+    var startDate = moment(ezyadmin.searchMediaCreatedAtStartInclusive);
+    var endDate = moment(ezyadmin.searchMediaCreatedAtEndInclusive);
+    if (startDate.isSame(endDate, 'day')
+        && ezyadmin.searchMediaCreatedAtStartInclusive === startDate.clone().startOf('day').valueOf()
+        && ezyadmin.searchMediaCreatedAtEndInclusive === startDate.clone().endOf('day').valueOf()
+    ) {
+        $('#mediaModelSearchDatePicker').val(startDate.format(ezyadmin.defaultDateFormat));
+    } else {
+        $('#mediaModelSearchTimeRangePicker').val(
+            startDate.format(ezyadmin.defaultDateFormat)
+            + ' - '
+            + endDate.format(ezyadmin.defaultDateFormat)
+        );
+    }
+}
+
+ezyadmin.changeBrowserUrl = function() {
+    var params = [];
+    if (ezyadmin.searchMediaKeyword) {
+        params.push('keyword=' + ezyadmin.searchMediaKeyword);
+    }
+    if (ezyadmin.searchMediaGroupNamePrefix) {
+        params.push('groupNamePrefix=' + ezyadmin.searchMediaGroupNamePrefix);
+    }
+    if (ezyadmin.searchMediaType) {
+        params.push('type=' + ezyadmin.searchMediaType);
+    }
+    if (ezyadmin.searchMediaStatus) {
+        params.push('status=' + ezyadmin.searchMediaStatus);
+    }
+    if (ezyadmin.searchMediaCreatedAtStartInclusive) {
+        params.push('createdAtStartInclusive=' + ezyadmin.searchMediaCreatedAtStartInclusive);
+    }
+    if (ezyadmin.searchMediaCreatedAtEndInclusive) {
+        params.push('createdAtEndInclusive=' + ezyadmin.searchMediaCreatedAtEndInclusive);
+    }
+    if (ezyadmin.searchMediaSortOrder) {
+        params.push('sortOrder=' + ezyadmin.searchMediaSortOrder);
+    }
+    if (ezyadmin.mediaDisplayType && ezyadmin.mediaDisplayType != 'ICONS') {
+        params.push('displayType=' + ezyadmin.mediaDisplayType);
+    }
+    if (ezyadmin.lang) {
+        params.push('lang=' + ezyadmin.lang);
+    }
+    var url = location.pathname;
+    if (params.length) {
+        url += '?' + params.join('&');
+    }
+    window.history.pushState({}, '', url);
+}
+
+ezyadmin.onMediaDisplayTypeChangedSuper = ezyadmin.onMediaDisplayTypeChanged;
+ezyadmin.onMediaDisplayTypeChanged = function(e) {
+    ezyadmin.onMediaDisplayTypeChangedSuper(e);
+    ezyadmin.changeBrowserUrl();
+}
+
+ezyadmin.fetchMediaListSuper = ezyadmin.fetchMediaList;
+ezyadmin.fetchMediaList = function(replace) {
+    ezyadmin.changeBrowserUrl();
+    ezyadmin.fetchMediaListSuper(replace);
+}
+
+ezyadmin.fetchMediaList();
+</script>
+</body>
+</html>

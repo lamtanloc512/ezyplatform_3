@@ -1,0 +1,58 @@
+<!--
+ ~ Copyright 2022 youngmonkeys.org
+ ~ 
+ ~ Licensed under the ezyplatform, Version 1.0.0 (the "License");
+ ~ you may not use this file except in compliance with the License.
+ ~ You may obtain a copy of the License at
+ ~ 
+ ~     https://youngmonkeys.org/licenses/ezyplatform-1.0.0.txt
+ ~ 
+ ~ Unless required by applicable law or agreed to in writing, software
+ ~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~ See the License for the specific language governing permissions and
+ ~ limitations under the License.
+-->
+
+<!DOCTYPE html>
+<html
+    xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:th="http://www.thymeleaf.org"
+    xmlns:ezy="http://www.ezyplatform.com/thymeleaf/layout"
+    xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{ezytheme}">
+<head>
+    <th:block th:if="${pageFragments != null && pageFragments.get('permission_denied') != null && !#strings.isEmpty(pageFragments.get('permission_denied').additionalHead)}">
+        <ezy:block ezy:utext="${pageFragments.get('permission_denied').additionalHead}" />
+    </th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+    <th:block th:if="${pageFragments != null && pageFragments.get('permission_denied') != null && pageFragments.get('permission_denied').content != 'permission_denied'}">
+        <ezy:block ezy:utext="${pageFragments.get('permission_denied').content}" />
+    </th:block>
+    <th:block th:if="${pageFragments == null || pageFragments.get('permission_denied') == null || pageFragments.get('permission_denied').content == 'permission_denied'}">
+        <div>
+            <div class="error-page-wrapper">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="error-page">
+                            <h2 class="headline text-warning"> 403</h2>
+                            <div class="error-content">
+                                <h3><i class="fas fa-exclamation-triangle text-warning"></i> [[#{permission_denied_title}]]</h3>
+                                <p th:utext="#{permission_denied_content}"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </th:block>
+</th:block>
+<th:block layout:fragment="scripts">
+    <th:block th:if="${pageFragments != null && pageFragments.get('permission_denied') != null && !#strings.isEmpty(pageFragments.get('permission_denied').additionalFoot)}">
+        <ezy:block ezy:utext="${pageFragments.get('permission_denied').additionalFoot}" />
+    </th:block>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!--
+ ~ Copyright 2022 youngmonkeys.org
+ ~ 
+ ~ Licensed under the ezyplatform, Version 1.0.0 (the "License");
+ ~ you may not use this file except in compliance with the License.
+ ~ You may obtain a copy of the License at
+ ~ 
+ ~     https://youngmonkeys.org/licenses/ezyplatform-1.0.0.txt
+ ~ 
+ ~ Unless required by applicable law or agreed to in writing, software
+ ~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~ See the License for the specific language governing permissions and
+ ~ limitations under the License.
+-->
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+<!-- Navbar -->
+<nav th:fragment="header" class="main-header navbar navbar-expand navbar-white navbar-light">
+    <!-- Left navbar links -->
+    <ul class="navbar-nav">
+        <li class="nav-item">
+            <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+        </li>
+        <li class="nav-item d-none d-sm-inline-block">
+            <a href="/" class="nav-link">[[#{home}]]</a>
+        </li>
+        <li class="nav-item d-none d-sm-inline-block">
+            <a th:href="${ezyplatformUrl + '/contact-us'}" class="nav-link">[[#{contact}]]</a>
+        </li>
+    </ul>
+
+    <!-- Right navbar links -->
+    <ul class="navbar-nav ml-auto">
+        <!-- Language Dropdown Menu-->
+        <li class="nav-item dropdown">
+            <a class="nav-link" data-toggle="dropdown" href="#">
+                <i class="fas fa-globe"></i>
+            </a>
+            <div class="dropdown-menu language-dropdown">
+                <th:block th:each="adminLanguage, iterator : ${adminLanguages}">
+                    <a class="dropdown-item cursor-pointer" th:attr="onclick=|ezyadmin.onLanguageSelected('${adminLanguage.code}')|">
+                        [[${adminLanguage.name}]]
+                    </a>
+                    <div th:if="${iterator.index < adminLanguages.size() - 1}" class="dropdown-divider"></div>
+                </th:block>
+            </div>
+        </li>
+
+        <!-- Navbar Search -->
+        <li class="nav-item">
+            <a class="nav-link" data-widget="navbar-search" href="#" role="button">
+                <i class="fas fa-search"></i>
+            </a>
+            <div class="navbar-search-block">
+                <div class="input-group input-group-sm">
+                    <input type="search" class="form-control form-control-navbar" aria-label="Search"
+                           th:placeholder="#{search}" id="globalSearchInput"
+                           onkeydown="ezyadmin.onKeyDownToGoToGlobalSearch();">
+                    <div class="input-group-append">
+                        <button type="button" class="btn btn-navbar" onclick="ezyadmin.goToGlobalSearch();">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <button type="button" class="btn btn-navbar" data-widget="navbar-search">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </li>
+        <!-- Messages Dropdown Menu -->
+        <li class="nav-item dropdown" id="messageListDropdownMenu">
+            <a class="nav-link cursor-pointer" data-toggle="dropdown">
+                <i class="far fa-comments"></i>
+                <span class="badge badge-danger navbar-badge d-none"
+                      id="messageListDropdownMenuBadgeCount">
+                    [[${messageListDropdownMenuMessageCount}]]
+                </span>
+            </a>
+            <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right d-none"
+                 id="messageListDropdownMenuItems">
+                <a th:href="${seeAllMessagesUrl}" class="dropdown-item dropdown-footer"
+                   th:id="messageListDropdownMenuSeeAllMessages">
+                    [[#{see_all_messages}]]
+                </a>
+            </div>
+        </li>
+        <!-- Notifications Dropdown Menu -->
+        <li class="nav-item dropdown">
+            <a class="nav-link cursor-pointer" data-toggle="dropdown">
+                <i class="far fa-bell"></i>
+                <span class="badge badge-warning navbar-badge notification-count">0</span>
+            </a>
+            <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                <span class="dropdown-item dropdown-header"><span class="notification-count">0</span> [[#{notifications}]]</span>
+                <div class="dropdown-divider" id="notificationHeaderDivider"></div>
+                <a class="dropdown-item dropdown-footer cursor-pointer" onclick="ezyadmin.readAllNotifications();">[[#{see_all_notifications}]]</a>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-widget="fullscreen" href="#" role="button">
+                <i class="fas fa-expand-arrows-alt"></i>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="control-sidebar-toggle-button"
+               data-widget="control-sidebar" data-slide="true" href="#" role="button">
+                <i class="fas fa-th-large control-sidebar-toggle"></i>
+            </a>
+        </li>
+    </ul>
+</nav>
+<!-- /.navbar -->
+<script th:fragment="scripts">
+ezyadmin.lastShiftKeyTime = 0;
+$(document).on('keydown', function (event) {
+    if (!event.key) {
+        return;
+    }
+    var mainHeader = $('.main-header');
+    var openSearchElement = mainHeader.find(
+        'a.nav-link[data-widget="navbar-search"]'
+    );
+    var searchBlockElement = mainHeader.find(
+        '.navbar-search-block'
+    );
+    var closeSearchElement = searchBlockElement.find(
+        'button[data-widget="navbar-search"]'
+    );
+
+    var key = event.key.toLowerCase();
+    var isCombo = (key === 'f' || key == 'ƒ')
+        && (event.metaKey || event.shiftKey)
+        && event.altKey
+        && event.ctrlKey;
+
+    if (isCombo) {
+        event.preventDefault();
+        openSearchElement.trigger('click');
+        return;
+    }
+
+    if (event.key === 'Shift') {
+        var now = Date.now();
+        if (now - ezyadmin.lastShiftKeyTime <= 500) {
+            ezyadmin.lastShiftKeyTime = 0;
+            openSearchElement.trigger('click');
+            return;
+        }
+        ezyadmin.lastShiftKeyTime = now;
+    } else {
+        ezyadmin.lastShiftKeyTime = 0;
+    }
+
+    if (event.key === 'Escape' && searchBlockElement.is(':visible')) {
+        closeSearchElement.trigger('click');
+    }
+});
+</script>
+</body>
+</html>

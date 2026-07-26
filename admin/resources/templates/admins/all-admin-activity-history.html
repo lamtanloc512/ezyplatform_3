@@ -1,0 +1,319 @@
+<!--
+ ~ Copyright 2022 youngmonkeys.org
+ ~ 
+ ~ Licensed under the ezyplatform, Version 1.0.0 (the "License");
+ ~ you may not use this file except in compliance with the License.
+ ~ You may obtain a copy of the License at
+ ~ 
+ ~     https://youngmonkeys.org/licenses/ezyplatform-1.0.0.txt
+ ~ 
+ ~ Unless required by applicable law or agreed to in writing, software
+ ~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~ See the License for the specific language governing permissions and
+ ~ limitations under the License.
+-->
+
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="content">
+    <div class="col-12">
+        <hr class="mb-4" />
+    </div>
+    <div class="col-12">
+        <h3>[[#{activity_history_of_all_administrators}]]</h3>
+    </div>
+    <div class="col-12">
+        <div class="row">
+            <div class="col-lg-3 col-md-4 page-search">
+                <label for="allAdminActivitySearchAdminId" class="text-nowrap">[[#{administrator}]]: </label>
+                <input type="text" class="form-control"
+                       th:placeholder="#{search_admin}"
+                       id="allAdminActivitySearchAdminId"
+                       autocomplete="off"
+                       oninput="ezyadmin.onAllAdminActivitySearchAdminIdChanged(this);"
+                       onkeydown="ezyadmin.onAllAdminActivitySearchAdminIdChanged(this);">
+            </div>
+            <div class="col-lg-3 col-md-4 page-search">
+                <label for="allAdminActivitySearchKeyword" class="text-nowrap">[[#{search}]]: </label>
+                <input type="search" class="form-control"
+                       th:placeholder="#{keyword}"
+                       id="allAdminActivitySearchKeyword"
+                       oninput="ezyadmin.onKeydownToSearchAllAdminActivity(this);"
+                       onkeydown="ezyadmin.onKeydownToSearchAllAdminActivity(this);">
+            </div>
+            <div class="col-lg-3 col-md-4 page-search">
+                <label for="allAdminActivitySearchHttpMethod" class="text-nowrap">[[#{method}]]: </label>
+                <select class="form-control form-select" id="allAdminActivitySearchHttpMethod"
+                        onchange="ezyadmin.onAllAdminActivitySearchHttpMethodChanged(this);">
+                    <option value="">[[#{all}]]</option>
+                    <option th:each="httpMethod : ${httpMethods}"
+                            th:value="${httpMethod}">
+                        [[${httpMethod}]]
+                    </option>
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-4 page-search">
+                <label for="allAdminActivitySearchUriType" class="text-nowrap">[[#{type}]]: </label>
+                <select class="form-control form-select" id="allAdminActivitySearchUriType"
+                        onchange="ezyadmin.onAdminAllActivitySearchUriTypeChanged(this);">
+                    <option value="">[[#{all}]]</option>
+                    <option value="API">API</option>
+                    <option value="VIEW">VIEW</option>
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-4 page-search">
+                <label for="allAdminActivitySearchTimeRangePicker" class="text-nowrap">[[#{time_range}]]: </label>
+                <input type="text" class="form-control"
+                       id="allAdminActivitySearchTimeRangePicker"/>
+            </div>
+            <div class="col-lg-3 col-md-4 page-search">
+                <label for="allAdminActivitySearchLimit" class="white-space-nowrap">
+                    [[#{limit}]]:
+                </label>
+                <select class="form-control" id="allAdminActivitySearchLimit"
+                        onchange="ezyadmin.onAllAdminActivitySearchLimitChanged(this);">
+                    <option value="30" selected>30 [[#{item_s}]]</option>
+                    <option value="50">50 [[#{item_s}]]</option>
+                    <option value="100">100 [[#{item_s}]]</option>
+                    <option value="200">200 [[#{item_s}]]</option>
+                    <option value="300">300 [[#{item_s}]]</option>
+                    <option value="400">400 [[#{item_s}]]</option>
+                    <option value="500">500 [[#{item_s}]]</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body table-responsive p-0">
+                <table id="allAdminActivityListTable" class="table table-bordered table-hover text-nowrap align-middle-cells">
+                    <thead>
+                    <tr>
+                        <th class="text-center pl-2p5">#</th>
+                        <th>[[#{administrator}]]</th>
+                        <th class="text-center">[[#{time}]]</th>
+                        <th class="text-center">[[#{method}]]</th>
+                        <th>[[#{uri}]]</th>
+                        <th class="text-center">[[#{type}]]</th>
+                        <th class="text-center">[[#{feature}]]</th>
+                        <th>[[#{parameters}]]</th>
+                    </tr>
+                    </thead>
+                    <tbody id="allAdminActivityListBody">
+                    </tbody>
+                </table>
+            </div>
+            <!-- /.card-body -->
+            <div class="card-footer clearfix">
+                <span><span id="allAdminActivityCountText">0</span>
+                    [[${#strings.toLowerCase(#messages.msg('of'))}]]
+                    <span id="totalAllAdminActivityText">0</span>
+                    [[${#strings.toLowerCase(#messages.msg('activities'))}]]
+                </span>
+                <ul class="pagination pagination-sm m-0 float-right">
+                    <li class="page-item">
+                        <button class="page-link" id="firstPageButtonAllAdminActivityHistory">
+                            <i class="fas fa-arrow-circle-left pl-1 pr-1"></i>
+                        </button>
+                    </li>
+                    <li class="page-item">
+                        <button class="page-link" id="prevPageButtonAllAdminActivityHistory">[[#{prev}]]</button>
+                    </li>
+                    <li class="page-item">
+                        <button class="page-link" id="nextPageButtonAllAdminActivityHistory">[[#{next}]]</button>
+                    </li>
+                    <li class="page-item">
+                        <button class="page-link" id="lastPageButtonAllAdminActivityHistory">
+                            <i class="fas fa-arrow-circle-right pl-1 pr-1"></i>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.card-footer -->
+        </div>
+    </div>
+</th:block>
+<script th:fragment="scripts" th:inline="javascript">
+/*<![CDATA[*/
+ezyadmin.accessibleUris['/api/v1/admins/activities'] = /*[[${adminRoles.isAccessible('/api/v1/admins/activities')}]]*/;
+/*]]>*/
+
+// ========== admin activity =============
+ezyadmin.onKeydownToSearchAllAdminActivity = function(e) {
+    var before = ezyadmin.allAdminActivitySearchKeyword;
+    ezyadmin.allAdminActivitySearchKeyword = $(e).val();
+    if(event.key === 'Enter' || (before && !ezyadmin.allAdminActivitySearchKeyword)) {
+        ezyadmin.fetchAllAdminActivityList();
+    }
+}
+
+ezyadmin.onAllAdminActivitySearchHttpMethodChanged = function(e) {
+    ezyadmin.allAdminActivitySearchHttpMethod = $(e).val();
+    ezyadmin.fetchAllAdminActivityList();
+}
+
+ezyadmin.onAllAdminActivitySearchAdminIdChanged = function(e) {
+    var before = ezyadmin.allAdminActivitySearchAdminIdInput;
+    ezyadmin.allAdminActivitySearchAdminIdInput = $(e).val();
+    if (event.key === 'Enter' || (before && !ezyadmin.allAdminActivitySearchAdminIdInput)) {
+        ezyadmin.fetchAllAdminActivityList();
+    }
+}
+
+ezyadmin.onAdminAllActivitySearchUriTypeChanged = function(e) {
+    ezyadmin.allAdminActivitySearchUriType = $(e).val();
+    ezyadmin.fetchAllAdminActivityList();
+}
+
+ezyadmin.onAllAdminActivitySearchLimitChanged = function(e) {
+    ezyadmin.allAdminActivitySearchLimit = $(e).val();
+    ezyadmin.fetchAllAdminActivityList();
+}
+
+ezyadmin.registerAdminIdAutocomplete('allAdminActivitySearchAdminId');
+
+$(document).ready(() => {
+    ezyadmin.createDateRangePicker(
+        '#allAdminActivitySearchTimeRangePicker',
+        {},
+        function(start, end, label) {
+            ezyadmin.allAdminActivitySearchCreatedAtStartInclusive = start.unix() * 1000;
+            ezyadmin.allAdminActivitySearchCreatedAtEndInclusive = end.unix() * 1000;
+            ezyadmin.fetchAllAdminActivityList();
+        }
+    );
+    $('#allAdminActivitySearchTimeRangePicker').on('cancel.daterangepicker', function (ev, picker) {
+        ezyadmin.allAdminActivitySearchCreatedAtStartInclusive = 0;
+        ezyadmin.allAdminActivitySearchCreatedAtEndInclusive = 0;
+        ezyadmin.fetchAllAdminActivityList();
+    });
+});
+
+// ========== admin activity pagination =============
+$('#firstPageButtonAllAdminActivityHistory').click(() => {
+    ezyadmin.fetchAllAdminActivityList('first');
+});
+$('#lastPageButtonAllAdminActivityHistory').click(() => {
+    ezyadmin.fetchAllAdminActivityList('last');
+});
+$('#nextPageButtonAllAdminActivityHistory').click(() => {
+    ezyadmin.fetchAllAdminActivityList('next');
+});
+$('#prevPageButtonAllAdminActivityHistory').click(() => {
+    ezyadmin.fetchAllAdminActivityList('prev');
+});
+
+// ========== admin activity list =============
+ezyadmin.fetchAllAdminActivityList = function(action) {
+    ezyadmin.showLoadingScreen();
+    var queryString = '';
+    var adminIdValue = ezyadmin.getSelectedAutocompleteFieldData(
+        'allAdminActivitySearchAdminId'
+    );
+    var adminId = Number(adminIdValue);
+    if (ezyadmin.allAdminActivitySearchKeyword) {
+        queryString += '&keyword=' + ezyadmin.allAdminActivitySearchKeyword;
+    }
+    if (adminId > 0) {
+        queryString += '&adminId=' + adminId;
+    }
+    if (ezyadmin.allAdminActivitySearchHttpMethod) {
+        queryString += '&method=' + ezyadmin.allAdminActivitySearchHttpMethod;
+    }
+    if (ezyadmin.allAdminActivitySearchUriType) {
+        queryString += '&uriType=' + ezyadmin.allAdminActivitySearchUriType;
+    }
+    if (ezyadmin.allAdminActivitySearchCreatedAtStartInclusive) {
+        queryString += '&createdAtStartInclusive=' + ezyadmin.allAdminActivitySearchCreatedAtStartInclusive;
+    }
+    if (ezyadmin.allAdminActivitySearchCreatedAtEndInclusive) {
+        queryString += '&createdAtEndInclusive=' + ezyadmin.allAdminActivitySearchCreatedAtEndInclusive;
+    }
+    if (action == 'next') {
+        if (ezyadmin.lastAllAdminActivityPageToken.next) {
+            queryString += '&nextPageToken=' + ezyadmin.lastAllAdminActivityPageToken.next;
+        } else {
+            return;
+        }
+    } else if (action == 'prev') {
+        if (ezyadmin.lastAllAdminActivityPageToken.prev) {
+            queryString += '&prevPageToken=' + ezyadmin.lastAllAdminActivityPageToken.prev;
+        } else {
+            return;
+        }
+    } else if (action == 'last') {
+        queryString += '&lastPage=true';
+    }
+    var limit = ezyadmin.allAdminActivitySearchLimit || 30;
+    $.ajax({
+        url: '/api/v1/admins/activities?limit=' + limit + queryString,
+        type: 'GET',
+        dataType: 'json'
+    })
+    .done(function(data) {
+        ezyadmin.hideLoadingScreen();
+        $('#allAdminActivityCountText').text(data.count);
+        $('#totalAllAdminActivityText').text(ezyadmin.formatTotalResults(data.total));
+        ezyadmin.lastAllAdminActivityPageToken = data.pageToken;
+        $('#allAdminActivityListBody').html(ezyadmin.buildAllAdminActivityListBodyHtml(data.items));
+        if (data.continuation.hasNext) {
+            $('#nextPageButtonAllAdminActivityHistory').removeClass('text-secondary');
+        } else {
+            $('#nextPageButtonAllAdminActivityHistory').addClass('text-secondary');
+        }
+        if (data.continuation.hasPrevious) {
+            $('#prevPageButtonAllAdminActivityHistory').removeClass('text-secondary');
+        } else {
+            $('#prevPageButtonAllAdminActivityHistory').addClass('text-secondary');
+        }
+    })
+    .fail(function(e) {
+        ezyadmin.hideLoadingScreen();
+        ezyadmin.processGetApiErrors(e);
+    });
+}
+
+ezyadmin.buildAllAdminActivityListBodyHtml = function(adminActivities) {
+    var html = '';
+    adminActivities.forEach((allAdminActivity) => {
+        html += ezyadmin.buildAllAdminActivityListItemHtml(allAdminActivity);
+    });
+    return html;
+}
+ezyadmin.buildAllAdminActivityListItemHtml = function(allAdminActivity) {
+    var statusColor = ezyadmin.getTextColorByStatus(allAdminActivity.status);
+    var admin = allAdminActivity.admin || {};
+    var adminHtml = admin.username
+        ? `<a href="/admins/${admin.username}${ezyadmin.lang ? `?lang=${ezyadmin.lang}` : ''}">${admin.name || ''}</a>`
+        : admin.name || '';
+    var html = `
+        <tr>
+            <td class="text-center pl-2p5">${ezyadmin.formatNumberWithCommas(allAdminActivity.id)}</td>
+            <td class="text-wrap line-break-anywhere">${adminHtml}</td>
+            <td class="text-center">${ezyadmin.formatTimeStamp(allAdminActivity.createdAt)}</td>
+            <td class="text-center">${allAdminActivity.method}</td>
+            <td>
+        `;
+    if (allAdminActivity.uriType == 'VIEW') {
+        html += `<a href="${allAdminActivity.uri}">
+            ${allAdminActivity.uri}
+        </a>`;
+    } else {
+        html += allAdminActivity.uri;
+    }
+    html += `
+            </td>
+            <td class="text-center">${allAdminActivity.uriType}</td>
+            <td class="text-center">${allAdminActivity.feature || ''}</td>
+            <td class="text-wrap text-break">${allAdminActivity.parameters || ''}</td>
+        </tr>
+        `;
+    return html;
+}
+ezyadmin.fetchAllAdminActivityList();
+</script>
+</body>
+</html>

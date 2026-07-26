@@ -1,0 +1,105 @@
+                Giấy phép EzyPlatform phiên bản 1.0, Tháng 3, 2022
+            http://www.youngmonkeys.org/licenses/ezyplatform-vi.txt
+            
+                ĐIỀU KHOẢN SỬ DỤNG, TÁI TẠO VÀ PHÂN PHỐI
+
+1. Định nghĩa
+
+Chúng tôi: Là tổ chức sở hữu youngmonkeys.org.
+
+Người dùng: Là bất kỳ cá nhân, tổ chức sử dụng, tái tạo và phân phối sản phẩm
+được tạo ra dựa trên EzyPlatform.
+
+EzyPlatform: Là tập hợp các tập tin mã nguồn, mã nhị phân gốc hoặc chỉnh sửa
+(thuộc quyền sở hữu) của chúng tôi.
+
+Phân phối: Là hành động trao đổi, mua bán dưới mọi hình thức bao gồm cả miễn
+phí và có tính phí.
+
+Sản phẩm phái sinh: Là các sản phẩm được tạo ra dựa trên EzyPlatform. Bao gồm
+sản phẩm phái sinh của chúng tôi và sản phẩm phái sinh của người dùng.
+
+Người dùng cuối: Là đối tượng sử dụng hoặc phân phối các sản phẩm được tạo ra
+từ EzyPlatform hoặc sản phẩm phái sinh của EzyPlatform.
+
+Sản phẩm đầu cuối: Là sản phẩm được tạo ra từ EzyPlatform và các sản phẩm phái
+sinh của EzyPlatform được người dùng cuối sử dụng.
+
+2. Hiệu lực
+
+Giấy phép này có hiệu lực khi người dùng sử dụng, tái tạo hoặc phân phối
+EzyPlatform và các sản phẩm phái sinh của EzyPlatform.
+
+3. Quyền tác giả
+
+EzyPlatform thuộc quyền sở hữu của chúng tôi và người dùng không thể tuyên bố
+quyền tác giả đối với EzyPlatform và các sản phẩm phái sinh do chúng tôi tạo
+ra. Người dùng chỉ có thể tuyên bố quyền tác giả đối với các sản phẩm phái sinh
+của mình. Nếu vi phạm quyền này, người dùng sẽ phải bồi thường thiệt hại cho
+chúng tôi (xem mục bồi thường).
+
+4. Phân phối
+
+Người dùng có thể phân phối các sản phẩm phái sinh của mình dưới bất kỳ phương
+tiện và hình thức nào. Tuy nhiên, người dùng không được phép phân phối EzyPlatform
+và các sản phẩm phái sinh do chúng tôi tạo ra trên bất kỳ phương tiện và hình thức
+nào khi chưa có sự đồng ý của chúng tôi. Nếu vi phạm, người dùng sẽ phải bồi thường
+thiệt hại cho chúng tôi (xem mục bồi thường).		
+
+5. Thay đổi
+
+Người dùng có thể tạo mới và tuỳ ý thay đổi các sản phẩm phái sinh của mình nhưng
+không thể thay đổi EzyPlatform hoặc sản phẩm phái sinh do chúng tôi tạo ra dưới
+bất kỳ hình thức và mục đích nào khi chưa có sự đồng ý của chúng tôi. Nếu vi phạm,
+người dùng sẽ phải bồi thường thiệt hại cho chúng tôi (xem mục bồi thường).
+
+6. Sử dụng thương hiệu
+
+Người dùng không được sử dụng thương hiệu EzyPlatform cho bất kỳ sản phẩm nào của
+mình. Nếu vi phạm, người dùng sẽ phải bồi thường thiệt hại cho chúng tôi
+(xem mục bồi thường).
+
+7. Trách nhiệm pháp lý
+
+Chúng tôi sẽ không chịu trách nhiệm và sẽ từ chối mọi trách nhiệm pháp lý cho bất
+kỳ sản phẩm nào của người dùng, cũng như mục đích sử dụng EzyPlatform và các sản
+phẩm phái sinh do người dùng tạo ra. Trong mọi trường hợp chúng tôi sẽ không chịu
+trách nhiệm và từ chối mọi trách nhiệm pháp lý đối với bất kỳ lỗi nào (dù là trực
+tiếp, gián tiếp, ngẫu nhiên, hay sự kiện bất khả kháng...) gây ra bởi hoặc liên
+quan đến việc sử dụng EzyPlatform và các sản phẩm phái sinh của EzyPlatform.
+
+8. Bảo hành
+
+Chúng tôi từ chối bảo hành cho EzyPlatform và các sản phẩm phái sinh của EzyPlatform.
+Tuy nhiên chúng tôi sẽ thường xuyên nâng cấp chúng.
+
+9. Sử dụng cho mục đích cá nhân
+
+Người dùng có thể sử dụng EzyPlatform và sản phẩm phái sinh do chúng tôi tạo ra
+cho mục đích phát triển các sản phẩm cá nhân và cung cấp sản phẩm đầu cuối tới
+khách hàng hoặc những người dùng cuối. Tuy nhiên người dùng sẽ không thể phân
+phối sản phẩm của mình cùng với EzyPlatform và sản phẩm phái sinh của EzyPlatform
+do chúng tôi tạo ra. Nếu vi phạm, người dùng sẽ phải bồi thường thiệt hại cho
+chúng tôi (xem mục bồi thường).
+
+10. Sử dụng trong thương mại hoá
+
+Người dùng có thể sử dụng EzyPlatform và sản phẩm phái sinh của EzyPlatform do
+chúng tôi tạo ra cho các sản phẩm thương mại nhưng chỉ được sử dụng cho mục đích
+cá nhân, trong tổ chức của người dùng hoặc sử dụng để cung cấp sản phẩm đầu cuối.
+Tuy nhiên người dùng không được phân phối sản phẩm của mình cùng với EzyPlatform
+và sản phẩm phái sinh của EzyPlatform do chúng tôi tạo ra. Nếu vi phạm, người dùng
+sẽ phải bồi thường thiệt hại cho chúng tôi (xem mục bồi thường).
+
+11. Bồi thường
+
+Việc vi phạm bất kỳ điều khoản nào trong giấy phép này sẽ dẫn đến việc người dùng
+phải bồi thường cho chúng tôi tối thiểu 100.000 (một trăm nghìn) đô la mỹ cho chi
+phí bản quyền. Thêm vào là toàn bộ doanh thu đến từ việc phân phối của EzyPlatform
+hoặc các sản phẩm phái sinh của EzyPlatform. Chi phí bồi thường có thể thay đổi
+thông qua thương lượng, hòa giải phù hợp tại thời điểm xảy ra tranh chấp. Trường
+hợp giải quyết tranh chấp thông qua khởi kiện, chúng tôi sẽ tiến hành giải quyết
+theo các quy định của luật pháp quốc tế và pháp luật quốc gia nơi người dùng sinh
+sống hoặc đăng ký kinh doanh.
+
+www.youngmonkeys.org

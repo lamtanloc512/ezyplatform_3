@@ -1,0 +1,829 @@
+<!--
+ ~ Copyright 2026 youngmonkeys.org
+ ~
+ ~ Licensed under the ezyplatform, Version 1.0.0 (the "License");
+ ~ you may not use this file except in compliance with the License.
+ ~ You may obtain a copy of the License at
+ ~
+ ~     https://youngmonkeys.org/licenses/ezyplatform-1.0.0.txt
+ ~
+ ~ Unless required by applicable law or agreed to in writing, software
+ ~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~ See the License for the specific language governing permissions and
+ ~ limitations under the License.
+-->
+
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="content">
+	<div class="modal fade" id="media-details">
+		<div class="modal-dialog modal-xl">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">[[#{media_details}]]</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body row">
+					<div class="col-lg-7 mb-2">
+						<div class="text-center max-height-75vn-scroll" id="mediaDetailsBody"></div>
+						<div class="d-flex justify-content-center flex-wrap gap-2 pt-3">
+							<button th:if="${allowReduceMediaFileSize}"
+									type="button" class="btn btn-outline-primary"
+									onclick="ezyadmin.onReduceMediaFileSizeClick();">
+								[[#{reduce_file_size_button_title}]]
+							</button>
+							<button type="button" class="btn btn-outline-secondary"
+									onclick="ezyadmin.onReplaceMediaClick();">
+								[[#{replace}]]
+							</button>
+							<button type="button" class="btn btn-outline-secondary"
+									onclick="ezyadmin.onMediaReplacementHistoryClick();">
+								[[#{replace_history}]]
+							</button>
+							<button type="button" class="btn btn-outline-danger"
+									id="deleteMediaOnDetailsButton"
+									onclick="ezyadmin.deleteMedia();">
+								[[#{delete}]]
+							</button>
+							<button type="button" class="btn btn-outline-success d-none"
+									id="restoreMediaButton" onclick="ezyadmin.restoreMedia();">
+								[[#{restore}]]
+							</button>
+							<a class="btn btn-outline-info d-none" id="viewExternalMediaButton" target="_blank">
+								[[#{view}]]
+								<i class="fas fa-external-link-alt"></i>
+							</a>
+						</div>
+						<div id="reduceMediaFileSizeArea"
+							 class="d-none align-items-center pt-3">
+							<input type="range" class="custom-range"
+								   id="reduceMediaFileSizeRange"
+								   oninput="ezyadmin.onReduceMediaFileSizeInputChanged();">
+							<span id="reduceMediaFileSizeText"
+								  class="ml-2 text-nowrap"></span>
+							<button type="button" class="btn btn-outline-success ml-2 text-nowrap"
+									onclick="ezyadmin.reduceMediaFileSize();">
+								[[#{apply}]]
+							</button>
+						</div>
+						<input type="file" class="d-none" id="replaceMediaFileInput" onchange="ezyadmin.replaceMedia();">
+						<div id="embedMediaScriptArea">
+							<span>[[#{embed_script}]]</span>
+							<textarea id="embedMediaScript" class="form-control" rows="5"></textarea>
+							<div class="d-flex justify-content-center pt-2">
+								<button class="btn btn-outline-primary" onclick="ezyadmin.copyEmbedMediaScript();">
+									[[#{copy_script}]]
+								</button>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-5 bg-light pl-2 pr-2 font-size-95">
+						<div class="row">
+							<div class="col-12 row">
+								<label class="col-4 pr-0">[[#{id}]]:</label><span id="mediaDetailsId" class="col-8 fit-text"></span>
+							</div>
+							<div class="col-12 row d-none" id="originalSizeFileRow">
+								<label class="col-4 pr-0">[[#{original_size_file}]]:</label>
+								<a id="originalSizeFile" class="col-8 fit-text" target="_blank"></a>
+							</div>
+							<div class="col-12 row">
+								<label class="col-4 pr-0">[[#{file_type}]]:</label><span id="fileType" class="col-8 fit-text"></span>
+							</div>
+							<div class="col-12 row">
+								<label class="col-4 pr-0">[[#{file_size}]]:</label><span id="fileSize" class="col-8"></span>
+							</div>
+							<div class="col-12 row">
+								<label class="col-4 pr-0">[[#{dimension}]]:</label><span id="dimension" class="col-8"></span>
+							</div>
+							<div class="col-12 row">
+								<label class="col-4 pr-0">[[#{upload_by}]]:</label><span id="uploadedBy" class="col-8"></span>
+							</div>
+							<div class="col-12 row">
+								<label class="col-4 pr-0">[[#{upload_on}]]:</label><span id="uploadedOn" class="col-8"></span>
+							</div>
+						</div>
+						<hr class="mt-2 mb-2"/>
+						<form id="updateMediaForm" onsubmit="return false;">
+							<div class="row">
+								<div class="col-12">
+									<div class="form-group row mb-1">
+										<label for="updateMediaOriginalName" class="col-md-4 col-form-label">[[#{file_name}]]</label>
+										<div class="col-md-8">
+											<label id="updateMediaOriginalNameErrorLabel" class="col-form-label text-danger d-none" for="updateMediaOriginalName">
+												<i class="far fa-times-circle"></i> <span id="updateMediaOriginalNameError"></span>
+											</label>
+											<input type="text" name="originalName" id="updateMediaOriginalName" class="form-control" th:placeholder="#{file_name}">
+										</div>
+									</div>
+									<div class="form-group row mb-1">
+										<label for="updateMediaType" class="col-md-4 col-form-label">[[#{type}]]</label>
+										<div class="col-md-8">
+											<label id="updateMediaTypeError" class="col-form-label text-danger d-none" for="updateMediaType">
+												<i class="far fa-times-circle"></i>
+											</label>
+											<select  name="type" id="updateMediaType" class="form-control">
+												<option th:each="commonMediaType : ${commonMediaTypes}"
+														th:value="${commonMediaType}">
+													[[#{${commonMediaType.toString().toLowerCase()}}]]
+												</option>
+											</select>
+										</div>
+									</div>
+									<div class="form-group row mb-1 d-none" id="updateMediaDurationWrapper">
+										<label for="updateMediaDuration" class="col-md-4 col-form-label">[[#{media_duration}]]</label>
+										<div class="col-md-8">
+											<label id="updateMediaDurationErrorLabel" class="col-form-label text-danger d-none" for="updateMediaDuration">
+												<i class="far fa-times-circle"></i> <span id="updateMediaDurationError"></span>
+											</label>
+											<input type="text" name="durationInMinutes" id="updateMediaDuration" class="form-control" th:placeholder="#{media_duration}">
+											<span>[[#{time_in_minutes}]]</span>
+										</div>
+									</div>
+									<div class="form-group row mb-1">
+										<label for="updateMediaGroupName" class="col-md-4 col-form-label">[[#{group_name}]]</label>
+										<div class="col-md-8">
+											<label id="updateMediaGroupNameErrorLabel" class="col-form-label text-danger d-none" for="updateMediaGroupName">
+												<i class="far fa-times-circle"></i> <span id="updateMediaGroupNameError"></span>
+											</label>
+											<input type="text" name="groupName" id="updateMediaGroupName" class="form-control" th:placeholder="#{group_name}">
+										</div>
+									</div>
+									<div class="form-group row mb-1">
+										<label for="updateMediaAlternativeText" class="col-md-4 col-form-label">[[#{alter}]]</label>
+										<div class="col-md-8">
+											<label id="updateMediaAlternativeTextErrorLabel" class="col-form-label text-danger d-none" for="updateMediaAlternativeText">
+												<i class="far fa-times-circle"></i> <span id="updateMediaAlternativeTextError"></span>
+											</label>
+											<input type="text" name="alternativeText" id="updateMediaAlternativeText" class="form-control" th:placeholder="#{alternative_text}">
+										</div>
+									</div>
+									<div class="form-group row mb-1">
+										<label for="updateMediaTitle" class="col-md-4 col-form-label">[[#{title}]]</label>
+										<div class="col-md-8">
+											<label id="updateMediaTitleErrorLabel" class="col-form-label text-danger d-none" for="updateMediaTitle">
+												<i class="far fa-times-circle"></i> <span id="updateMediaTitleError"></span>
+											</label>
+											<input type="text" name="title" id="updateMediaTitle" class="form-control" th:placeholder="#{title}">
+										</div>
+									</div>
+									<div class="form-group row mb-1">
+										<label for="updateMediaCaption" class="col-md-4 col-form-label">[[#{caption}]]</label>
+										<div class="col-md-8">
+											<label id="updateMediaCaptionErrorLabel" class="col-form-label text-danger d-none" for="updateMediaCaption">
+												<i class="far fa-times-circle"></i> <span id="updateMediaCaptionError"></span>
+											</label>
+											<textarea name="caption" id="updateMediaCaption" class="form-control" th:placeholder="#{caption}"></textarea>
+										</div>
+									</div>
+									<div class="form-group row mb-1">
+										<label for="updateMediaDescription" class="col-md-4 col-form-label">[[#{description}]]</label>
+										<div class="col-md-8">
+											<label id="updateMediaDescriptionErrorLabel" class="col-form-label text-danger d-none" for="updateMediaDescription">
+												<i class="far fa-times-circle"></i> <span id="updateMediaDescriptionError"></span>
+											</label>
+											<textarea name="description" id="updateMediaDescription" class="form-control" th:placeholder="#{description}"></textarea>
+										</div>
+									</div>
+									<div class="form-group row mb-1">
+										<label for="updateNotPublicMedia" class="col-md-4 col-form-label"></label>
+										<div class="col-md-8 d-flex align-items-center">
+											<input type="checkbox" name="notPublicMedia" id="updateNotPublicMedia" class="form-check">
+											<span class="ml-2">[[#{not_public_for_every_user}]]</span>
+										</div>
+									</div>
+									<div class="form-group row mb-1">
+										<label for="adminOriginalUrlPath" class="col-md-4 col-form-label">[[#{admin_original_url_path}]]</label>
+										<div class="col-md-8 d-flex align-items-center">
+											<a id="adminOriginalUrlPath" class="media-url-path flex-grow-1" target="_blank"></a>
+											<button type="button" class="btn btn-link text-dark p-0 ml-2"
+													th:title="#{copy_url}"
+													onclick="ezyadmin.copyMediaUrlPath('adminOriginalUrlPath');">
+												<i class="far fa-copy"></i>
+											</button>
+										</div>
+									</div>
+									<div class="form-group row mb-1">
+										<label for="adminRandomUrlPath" class="col-md-4 col-form-label">[[#{admin_random_url_path}]]</label>
+										<div class="col-md-8 d-flex align-items-center">
+											<a id="adminRandomUrlPath" class="media-url-path flex-grow-1" target="_blank"></a>
+											<button type="button" class="btn btn-link text-dark p-0 ml-2"
+													th:title="#{copy_url}"
+													onclick="ezyadmin.copyMediaUrlPath('adminRandomUrlPath');">
+												<i class="far fa-copy"></i>
+											</button>
+										</div>
+									</div>
+									<div class="form-group row mb-1">
+										<label for="webOriginalUrlPath" class="col-md-4 col-form-label">[[#{web_original_url_path}]]</label>
+										<div class="col-md-8 d-flex align-items-center">
+											<a id="webOriginalUrlPath" class="media-url-path flex-grow-1" target="_blank"></a>
+											<button type="button" class="btn btn-link text-dark p-0 ml-2"
+													th:title="#{copy_url}"
+													onclick="ezyadmin.copyMediaUrlPath('webOriginalUrlPath');">
+												<i class="far fa-copy"></i>
+											</button>
+										</div>
+									</div>
+									<div class="form-group row mb-1">
+										<label for="updateMediaUrl" class="col-md-4 col-form-label">[[#{media_url}]]</label>
+									   	<div class="col-md-8">
+											<label class="col-form-label text-danger d-none" id="updateMediaUrlErrorLabel" for="updateMediaUrl">
+												<i class="far fa-times-circle"></i> <span id="updateMediaUrlError"></span>
+											</label>
+											<input type="text" name="url" id="updateMediaUrl"
+												   class="form-control" th:placeholder="#{media_url}">
+										</div>
+									</div>
+									<div class="form-group row">
+										<div class="col-md-4"></div>
+										<div class="col-lg-4 col-md-9 pt-sm-0 pt-1" th:if="${currentMenu == 'media'}">
+											<button type="button" class="btn btn-primary w-100 white-space-nowrap"
+													onclick="ezyadmin.copyMediaUrl();">
+												[[#{copy_url}]]
+											</button>
+										</div>
+										<div class="col-lg-4 col-md-9 pt-sm-0 pt-1" th:if="${currentMenu != 'media'}">
+											<button type="button" class="btn btn-primary w-100" id="selectMediaButton"
+													onclick="ezyadmin.selectMedia();">
+												[[#{select}]]
+											</button>
+										</div>
+										<div class="d-lg-none d-md-block col-md-3 d-none"></div>
+										<div class="col-lg-4 col-md-9 pt-lg-0 pt-md-1 pt-1">
+											<button type="button" class="btn btn-outline-primary w-100 text-primary-always"
+													onclick="ezyadmin.updateMedia();">[[#{update}]]</button>
+										</div>
+										<div class="col-lg-1"></div>
+									</div>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+			<!-- /.modal-content -->
+		</div>
+		<!-- /.modal-dialog -->
+	</div>
+	<!-- /.modal -->
+</th:block>
+<script th:fragment="scripts" th:inline="javascript">
+/*<![CDATA[*/
+ezyadmin.accessibleUris['/api/v1/media/{id}/details'] = /*[[${adminRoles.isAccessible('/api/v1/media/{id}/details')}]]*/;
+ezyadmin.accessibleUris['/api/v1/media/{id}/edit'] = /*[[${adminRoles.isAccessible('/api/v1/media/{id}', 'PUT')}]]*/;
+ezyadmin.accessibleUris['/api/v1/media/{id}/delete'] = /*[[${adminRoles.isAccessible('/api/v1/media/{id}', 'DELETE')}]]*/;
+ezyadmin.accessibleUris['/api/v1/media/{id}/replace'] = /*[[${adminRoles.isAccessible('/api/v1/media/{id}/replace', 'POST')}]]*/;
+ezyadmin.accessibleUris['/api/v1/media/{id}/reduce-file-size'] = /*[[${adminRoles.isAccessible('/api/v1/media/{id}/reduce-file-size', 'POST')}]]*/;
+ezyadmin.accessibleUris['/api/v1/media/{id}/restore'] = /*[[${adminRoles.isAccessible('/api/v1/media/{id}/restore', 'PUT')}]]*/;
+/*]]>*/
+
+$('#media-details').on('hidden.bs.modal', function (e) {
+	var items = $('.playable-media-item');
+	for(var i = 0 ; i < items.length ; ++i) {
+		items[i].pause();
+	}
+});
+
+// ======================= media details =============
+ezyadmin.selectedMediaId = 0;
+ezyadmin.showMediaDetails = function(mediaId) {
+    ezyadmin.selectedMediaId = mediaId;
+    ezyadmin.fetchMediaDetailsById(mediaId);
+}
+
+ezyadmin.showMediaDetailsProxy = function(mediaId) {
+	ezyadmin.showMediaDetails(mediaId);
+}
+
+ezyadmin.copyMediaUrl = function() {
+    ezyadmin.copyToClipboard('updateMediaUrl', true, 'URL');
+}
+
+ezyadmin.copyMediaUrlPath = function(elementId) {
+    ezyadmin.copyToClipboard(elementId, false, 'URL');
+}
+
+ezyadmin.copyEmbedMediaScript = function() {
+    ezyadmin.copyToClipboard(
+    	'embedMediaScript',
+    	true,
+    	ezyadmin.messages.script
+	);
+}
+
+ezyadmin.setMediaUrlPath = function(elementId, url) {
+	$(`#${elementId}`).attr('href', url).text(url);
+}
+
+ezyadmin.isInternalMediaUrl = function(mediaUrl) {
+	return mediaUrl
+		&& !mediaUrl.startsWith('http://')
+		&& !mediaUrl.startsWith('https://');
+}
+
+ezyadmin.isExternalMediaUrl = function(mediaUrl) {
+	return mediaUrl
+		&& (mediaUrl.startsWith('http://')
+		|| mediaUrl.startsWith('https://'));
+}
+
+ezyadmin.fetchMediaDetailsById = function(mediaId, replace) {
+	var url = ezyadmin.accessibleUris['/api/v1/media/{id}/details']
+		? '/api/v1/media/' + mediaId + '/details'
+		: '/api/v1/me/media/' + mediaId + '/details';
+	$.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json'
+    })
+    .done(function(media) {
+        ezyadmin.selectedMedia = media;
+		$('#reduceMediaFileSizeArea')
+			.addClass('d-none')
+			.removeClass('d-flex');
+        var uploadedByHtml = '';
+		if (media.ownerAdmin) {
+			var profileUrl = `/admins/${media.ownerAdmin.username}${ezyadmin.lang ? `?lang=${ezyadmin.lang}` : ''}`;
+			uploadedByHtml = `<a href="${profileUrl}">${media.ownerAdmin.name} (${ezyadmin.messages.administrator.toLowerCase()})</a>`;
+		} else if (media.ownerUser) {
+			var profileUrl = `/users/${media.ownerUser.username}${ezyadmin.lang ? `?lang=${ezyadmin.lang}` : ''}`;
+			uploadedByHtml = `<a href="${profileUrl}">${media.ownerUser.name} (${ezyadmin.messages.user.toLowerCase()})</a>`;
+		}
+		$('#uploadedBy').html(uploadedByHtml);
+
+		var mediaDetailsBodyHtml = '';
+		var mediaUrl = replace
+			? ezyadmin.extractMediaUrlAddNowAsVersion(media)
+			: ezyadmin.extractMediaUrl(media);
+		ezyadmin.selectedMedia.url = mediaUrl;
+		if (media.type === 'IMAGE' || media.type === 'AVATAR') {
+			var previewAlt = media.alternativeText || media.originalName || '';
+			mediaDetailsBodyHtml = `
+				<a href="${mediaUrl}" class="media-details-preview-link"
+					target="_blank" rel="noopener"
+					onclick="ezyadmin.openMediaImagePreview(); return false;">
+					<img src="${mediaUrl}" alt="${previewAlt}"
+						class="img-fluid media-details-preview-image">
+					<span class="media-details-preview-badge">
+						<i class="fas fa-search-plus"></i>
+						<span>${ezyadmin.messages.zoom}</span>
+					</span>
+				</a>
+				<div class="media-details-preview-hint pt-2">
+					<span>${ezyadmin.messages.click_to_view_full_screen_and_zoom}</span>
+				</div>`;
+		} else if (media.type === 'VIDEO') {
+			mediaDetailsBodyHtml = `
+				<video class="video-details playable-media-item" controls>
+					<source src="${mediaUrl}" type="video/mp4">
+					<source src="${mediaUrl}" type="video/ogg">
+					Your browser does not support the video tag.
+				</video>`;
+		} else if (media.type === 'AUDIO') {
+			mediaDetailsBodyHtml = `
+				<div class="file-details audio-details">
+					<audio class="playable-media-item" controls>
+						<source src="${mediaUrl}" type="audio/mpeg">
+						<source src="${mediaUrl}" type="audio/ogg">
+						Your browser does not support the audio tag.
+					</audio>
+					<span class="text-dark-always">${media.originalName}</span>
+				</div>`;
+		} else {
+			mediaDetailsBodyHtml = `
+				<div class="file-details">
+					<i class="far fa-file text-dark-always"></i>
+					<div>
+						<a class="text-dark-always" href="${mediaUrl}" target="_blank">${media.originalName}</a>
+					</div>
+				</div>`;
+		}
+
+		var adminRandomUrlPath =
+			`${ezyadmin.adminUrl}/api/v1/media/${media.name}`;
+		var adminOriginalUrlPath =
+			`${ezyadmin.adminUrl}/api/v1/media/${encodeURIComponent(media.originalName)}`;
+		var webOriginalUrlPath =
+			`${ezyadmin.webUrl}/api/v1/media/${encodeURIComponent(media.originalName)}`;
+		var webMediaUrl = ezyadmin.extractMediaUrl(media);
+		if (ezyadmin.isInternalMediaUrl(mediaUrl)) {
+			webMediaUrl = ezyadmin.webUrl + mediaUrl;
+		}
+		if (media.type === 'VIDEO') {
+			$('#embedMediaScript').val(`
+				<iframe width="560" height="315"
+					src="${mediaUrl}"
+					title="Video player" frameborder="0"
+					allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+					allowfullscreen>
+				</iframe>`);
+			$('#embedMediaScriptArea').removeClass('d-none');
+		} else {
+			$('#embedMediaScriptArea').addClass('d-none');
+		}
+		$('#mediaDetailsBody').html(mediaDetailsBodyHtml);
+		$('#uploadedOn').text(ezyadmin.formatTimeStamp(media.createdAt));
+		$('#mediaDetailsId').text(media.id);
+		$('#updateMediaOriginalName').val(media.originalName);
+		$('#originalSizeFileRow').addClass('d-none');
+		if (media.originalSizeFileName) {
+			$('#originalSizeFile')
+				.attr('href', `/api/v1/media/${media.originalSizeFileName}`)
+				.text(media.originalSizeFileName);
+			$('#originalSizeFileRow').removeClass('d-none');
+		}
+		$('#fileType').text(media.mimeType);
+		ezyadmin.setMediaUrlPath('adminOriginalUrlPath', adminOriginalUrlPath);
+		ezyadmin.setMediaUrlPath('adminRandomUrlPath', adminRandomUrlPath);
+		ezyadmin.setMediaUrlPath('webOriginalUrlPath', webOriginalUrlPath);
+		$('#updateMediaUrl').val(webMediaUrl);
+		$('#fileSize').text(ezyadmin.toCapacityString(media.size));
+		$('#dimension').text(media.width + 'x' + media.height);
+		$('#updateMediaType').val(media.type);
+		if (ezyadmin.isExternalMediaUrl(mediaUrl)) {
+			$('#updateMediaDuration').val(media.durationInMinutes);
+			$('#updateMediaDurationWrapper')
+				.removeClass('d-none');
+			$('#viewExternalMediaButton')
+				.attr('href', mediaUrl)
+				.removeClass('d-none');
+		} else {
+			$('#updateMediaDurationWrapper').addClass('d-none');
+			$('#viewExternalMediaButton').addClass('d-none');
+		}
+		$('#updateMediaAlternativeText').val(media.alternativeText);
+		$('#updateMediaGroupName').val(media.groupName);
+		$('#updateMediaTitle').val(media.title);
+		$('#updateMediaCaption').val(media.caption);
+		$('#updateMediaDescription').val(media.description);
+		$('#updateNotPublicMedia').prop('checked', !media.publicMedia)
+		if (ezyadmin.allowPermanentlyDeleteMedia) {
+			$('#deleteMediaOnDetailsButton').removeClass('d-none');
+		} else {
+			$('#deleteMediaOnDetailsButton').addClass('d-none');
+		}
+		if (media.status === 'REMOVED') {
+			$('#restoreMediaButton').removeClass('d-none');
+		} else {
+			$('#restoreMediaButton').addClass('d-none');
+		}
+		$('#selectMediaButton').attr('disabled', false);
+		var handler = ezyadmin.mediaSelectedHandlers[ezyadmin.currentMediaSelectedCommand];
+		if (handler) {
+			var showCallback = handler.showCallback;
+			if (showCallback) {
+				showCallback(ezyadmin.selectedMedia);
+			}
+		}
+		$('#media-details').modal('show');
+    })
+    .fail(function(e) {
+    	ezyadmin.processGetApiErrors(e);
+    });
+}
+
+// ======================= media update =============
+ezyadmin.updateMedia = function() {
+	var updateMediaData = ezyadmin.formDataToObject('updateMediaForm');
+	if (updateMediaData.url
+		&& updateMediaData.url.startsWith(ezyadmin.webUrl)
+	) {
+		updateMediaData.url = updateMediaData.url
+			.slice(ezyadmin.webUrl.length);
+	}
+	updateMediaData.notPublic = $('#updateNotPublicMedia').prop('checked');
+	delete updateMediaData.notPublicMedia;
+    if (ezyadmin.isExternalMediaUrl(updateMediaData.url)) {
+		updateMediaData.updateDuration = true;
+	} else {
+		delete updateMediaData.durationInMinutes;
+	}
+    var url = ezyadmin.accessibleUris['/api/v1/media/{id}/edit']
+    	? '/api/v1/media/' + ezyadmin.selectedMediaId
+    	: '/api/v1/me/media/' + ezyadmin.selectedMediaId;
+    $.ajax({
+        type: "PUT",
+        url: url,
+        contentType: 'application/json',
+        data: JSON.stringify(updateMediaData),
+        success: function (data) {
+        	ezyadmin.hideFormErrors(updateMediaData);
+            ezyadmin.shortToast('bg-success', ezyadmin.messages.update_successfully);
+            ezyadmin.fetchMediaDetailsById(ezyadmin.selectedMediaId);
+            ezyadmin.fetchMediaList(true);
+        },
+        error: function (e) {
+           	ezyadmin.shortToast('bg-danger', ezyadmin.messages.update_failed);
+			ezyadmin.processUpdateApiErrors(updateMediaData, e);
+        }
+    });
+}
+
+// ======================= media replace =============
+ezyadmin.onReplaceMediaClick = function() {
+	$('#replaceMediaFileInput').val('');
+	$('#replaceMediaFileInput').trigger('click');
+}
+
+ezyadmin.replacedMediaById = {};
+ezyadmin.replaceMedia = function() {
+	var fileInput = $('#replaceMediaFileInput')[0];
+	if (!fileInput.files || !fileInput.files.length) {
+		return;
+	}
+	var mediaId = ezyadmin.selectedMediaId;
+	var data = new FormData();
+	data.append('file', fileInput.files[0]);
+	ezyadmin.showLoadingScreen({showPercent: true});
+	var url = ezyadmin.accessibleUris['/api/v1/media/{id}/replace']
+		? '/api/v1/media/' + mediaId + '/replace'
+		: '/api/v1/me/media/' + mediaId + '/replace';
+	$.ajax({
+		type: "POST",
+		enctype: 'multipart/form-data',
+		url: url,
+		data: data,
+		processData: false,
+		contentType: false,
+		cache: false,
+		xhr: function () {
+			var xhr = new window.XMLHttpRequest();
+			xhr.upload.addEventListener('progress', function(event) {
+				if (event.lengthComputable) {
+					var percentComplete = Math.round((event.loaded / event.total) * 100);
+					ezyadmin.setLoadingScreenPercent(percentComplete);
+				}
+			});
+			return xhr;
+		},
+		success: function (data) {
+			ezyadmin.setLoadingScreenPercent(100);
+			ezyadmin.hideLoadingScreen();
+			ezyadmin.fetchMediaDetailsById(mediaId, true);
+			ezyadmin.replacedMediaById[mediaId] = data;
+			ezyadmin.fetchMediaList(true);
+		},
+		error: function (e) {
+			ezyadmin.hideLoadingScreen();
+			ezyadmin.shortToast('bg-danger', ezyadmin.messages.update_failed);
+		}
+	});
+}
+
+// ======================= media delete =============
+ezyadmin.onFastDeleteMediaClick = function(mediaId) {
+	ezyadmin.deleteMedia(mediaId);
+	window.event.stopPropagation();
+}
+
+ezyadmin.deleteMedia = function(mediaId) {
+	var actualMediaId = (mediaId || ezyadmin.selectedMediaId);
+	var url = ezyadmin.accessibleUris['/api/v1/media/{id}/delete']
+    	? '/api/v1/media/' + actualMediaId
+    	: '/api/v1/me/media/' + actualMediaId;
+     $.ajax({
+        type: "DELETE",
+        url: url,
+        success: function (data) {
+            ezyadmin.shortToast('bg-success', ezyadmin.messages.delete_successfully);
+            $('#media-details').modal('hide');
+            ezyadmin.mediaList = ezyadmin.mediaList.filter(
+            	(item) => item.id !== actualMediaId
+            );
+            delete ezyadmin.mediaById[actualMediaId];
+            $('#mediaItem' + actualMediaId).remove();
+            $('#mediaCountText').text(-- ezyadmin.mediaCount);
+            $('#totalMediaText').text(-- ezyadmin.mediaTotal);
+        },
+        error: function (data, e) {
+           ezyadmin.shortToast('bg-danger', ezyadmin.messages.delete_failed);
+        }
+    });
+}
+
+// ======================= media restore =============
+ezyadmin.restoreMedia = function(mediaId) {
+	var actualMediaId = (mediaId || ezyadmin.selectedMediaId);
+	var url = ezyadmin.accessibleUris['/api/v1/media/{id}/restore']
+    	? '/api/v1/media/' + actualMediaId + '/restore'
+    	: '/api/v1/me/media/' + actualMediaId + '/restore';
+     $.ajax({
+        type: "PUT",
+        url: url,
+        success: function (data) {
+            ezyadmin.shortToast('bg-success', ezyadmin.messages.update_successfully);
+            ezyadmin.fetchMediaDetailsById(actualMediaId);
+            ezyadmin.fetchMediaList(true);
+        },
+        error: function (data, e) {
+           ezyadmin.shortToast('bg-danger', ezyadmin.messages.update_failed);
+        }
+    });
+}
+
+// ================== media zoom ===============
+ezyadmin.openMediaImagePreview = async function(mediaId) {
+	if (mediaId) {
+		ezyadmin.selectedMediaId = mediaId;
+		ezyadmin.selectedMedia = ezyadmin.mediaById[mediaId];
+	}
+	var lightbox = await ezyadmin.ensurePhotoSwipeLightbox();
+	ezyadmin.loadAndOpenLightbox(lightbox);
+}
+
+ezyadmin.ensurePhotoSwipeLightbox = async function() {
+	if (ezyadmin.photoSwipeLightbox) {
+		return ezyadmin.photoSwipeLightbox;
+	}
+	var module = await import(
+		'/js/photoswipe-lightbox.esm.min.js'
+	);
+	var PhotoSwipeLightbox = module.default;
+	var lightbox = new PhotoSwipeLightbox({
+		showHideAnimationType: 'fade',
+		pswpModule: () => import(
+			'/js/photoswipe.esm.min.js'
+		),
+		arrowKeys: true,
+		escKey: true,
+		returnFocus: true,
+		trapFocus: true,
+		preloadFirstSlide: true,
+		bgOpacity: 0.92,
+		spacing: 0.08,
+		allowPanToNext: true,
+		wheelToZoom: true,
+		clickToCloseNonZoomable: false,
+		imageClickAction: 'zoom-or-close',
+		tapAction: 'toggle-controls',
+		doubleTapAction: 'zoom',
+		initialZoomLevel: 'fit',
+		secondaryZoomLevel: ezyadmin.imageSecondaryZoomLevel || 2,
+		maxZoomLevel: 4,
+		closeTitle: ezyadmin.messages.close,
+		zoomTitle: ezyadmin.messages.zoom,
+		arrowPrevTitle: ezyadmin.messages.previous,
+		arrowNextTitle: ezyadmin.messages.next,
+		indexIndicatorSep: ' / ',
+		...ezyadmin.photoSwipeLightboxSettings
+	});
+	await lightbox.init();
+	if (ezyadmin.photoSwipeLightboxDecorator) {
+		ezyadmin.photoSwipeLightboxDecorator(lightbox);
+	}
+	ezyadmin.photoSwipeLightbox = lightbox;
+	return lightbox;
+}
+
+ezyadmin.loadAndOpenLightbox = function(lightbox) {
+	var mediaList = ezyadmin.currentMediaListTemp;
+	if (!mediaList || !mediaList.length) {
+		mediaList = ezyadmin.getMediaListSortedByIdDesc();
+	}
+	ezyadmin.currentMediaListTemp = null;
+	var items = [];
+	var index = 0;
+	mediaList.forEach((it) => {
+		if (it.type != 'IMAGE' && it.type != 'AVATAR') {
+			return;
+		}
+		it.lighboxItemIndex = index;
+		if (ezyadmin.selectedMedia.id == it.id) {
+			it.url = ezyadmin.selectedMedia.url;
+			ezyadmin.selectedMedia.lighboxItemIndex = index;
+		}
+		items.push(ezyadmin.mediaToLightboxItem(it));
+		++index;
+	});
+	lightbox.loadAndOpen(
+		ezyadmin.selectedMedia.lighboxItemIndex,
+		items
+	);
+}
+
+ezyadmin.mediaToLightboxItem = function(media) {
+	var mediaWidth = media.width || (screen.width - 30);
+	var mediaHeight = media.height || mediaWidth * 9 / 16;
+	return {
+		src: ezyadmin.extractMediaUrl(media),
+		width: mediaWidth,
+		height: mediaHeight,
+		alt: media.alternativeText || media.originalName || ''
+	};
+}
+
+// ======================= reduce media file size =============
+ezyadmin.getReduceMediaFileSizeFailedMessage = function() {
+	var media = ezyadmin.selectedMedia || {};
+	var fileType = media.mimeType || media.type || '';
+	return ezyadmin.messages.reduce_file_size_failed_message
+		.replace('{0}', fileType);
+}
+
+ezyadmin.onReduceMediaFileSizeClick = function() {
+	var media = ezyadmin.selectedMedia;
+	if (!media || !media.size || media.size <= 1) {
+		ezyadmin.showAlert(ezyadmin.getReduceMediaFileSizeFailedMessage());
+		return;
+	}
+	var maxExpectedFileSize = Math.min(
+		ezyadmin.maxReducedImageFileSize || media.size,
+		media.size
+	);
+	var expectedFileSize = Math.max(
+		1,
+		Math.min(maxExpectedFileSize, Math.floor(media.size * 0.8))
+	);
+	$('#reduceMediaFileSizeRange')
+		.attr('min', 1)
+		.attr('max', maxExpectedFileSize)
+		.attr('step', Math.max(1, Math.floor(maxExpectedFileSize / 100)))
+		.val(expectedFileSize);
+	ezyadmin.setReduceMediaFileSizeText(expectedFileSize);
+	$('#reduceMediaFileSizeArea')
+		.removeClass('d-none')
+		.addClass('d-flex');
+}
+
+ezyadmin.onReduceMediaFileSizeInputChanged = function() {
+	ezyadmin.setReduceMediaFileSizeText(
+		Number($('#reduceMediaFileSizeRange').val())
+	);
+}
+
+ezyadmin.setReduceMediaFileSizeText = function(expectedFileSize) {
+	$('#reduceMediaFileSizeText').text(
+		ezyadmin.toCapacityString(expectedFileSize)
+	);
+}
+
+ezyadmin.reduceMediaFileSize = function() {
+	ezyadmin.doReduceMediaFileSize({
+		showLoading: true
+	});
+}
+
+ezyadmin.reduceMediaFileSizeAsync = async function(options) {
+	return new Promise((resolve, reject) => {
+		ezyadmin.doReduceMediaFileSize({
+			successCallback: resolve,
+			errorCallback: reject,
+			...options
+		});
+	});
+}
+
+ezyadmin.doReduceMediaFileSize = function(options) {
+	var mediaId = options.mediaId || ezyadmin.selectedMediaId;
+	var expectedFileSize = options.expectedFileSize
+		|| Number($('#reduceMediaFileSizeRange').val());
+	if (options.showLoading) {
+		ezyadmin.showLoadingScreen();
+	}
+	var url = ezyadmin.accessibleUris['/api/v1/media/{id}/reduce-file-size']
+		? '/api/v1/media/' + mediaId + '/reduce-file-size'
+		: '/api/v1/me/media/' + mediaId + '/reduce-file-size';
+	$.ajax({
+		type: "POST",
+		url: url,
+		contentType: 'application/json',
+		data: JSON.stringify({
+			expectedFileSize: expectedFileSize
+		}),
+		success: function (data) {
+			if (options.showLoading) {
+				ezyadmin.hideLoadingScreen();
+			}
+			if (options.successCallback) {
+				options.successCallback(data);
+				return;
+			}
+			if (data && data.reduced) {
+				ezyadmin.fetchMediaDetailsById(mediaId, true);
+				ezyadmin.fetchMediaListAndClearCheckedMediaItems();
+			} else {
+				ezyadmin.showAlert(ezyadmin.getReduceMediaFileSizeFailedMessage());
+			}
+		},
+		error: function (e) {
+			if (options.showLoading) {
+				ezyadmin.hideLoadingScreen();
+			}
+			if (options.errorCallback) {
+				options.errorCallback(e);
+				ezyadmin.processUpdateApiErrors({}, e);
+				return;
+			}
+			ezyadmin.showAlert(ezyadmin.getReduceMediaFileSizeFailedMessage());
+			ezyadmin.processUpdateApiErrors({}, e);
+		}
+	});
+}
+</script>
+</body>
+</html>
