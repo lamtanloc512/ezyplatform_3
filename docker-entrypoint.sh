@@ -36,7 +36,7 @@ seed() {
 
 # Deployment config, not runtime state - always resynced from the image so
 # git changes apply on redeploy without wiping plugins/self-updated jars.
-CONFIG_FILES="web/settings/config.properties"
+CONFIG_FILES="web/settings/config.properties admin/settings/config.properties socket/settings/config.properties"
 
 DATA_DIR="${RAILWAY_VOLUME_MOUNT_PATH:-}"
 
