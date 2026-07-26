@@ -7,9 +7,14 @@
 # etc.; the admin UI writes plugin jars under admin/plugins, web/plugins).
 # So on Railway, RAILWAY_VOLUME_MOUNT_PATH's volume holds the *entire* app
 # (like a VPS install disk), seeded from the image once on first boot only.
-# On every later boot the volume's copy is authoritative and is NOT
-# resynced from the image - platform/plugin updates must be applied against
-# the live volume (via EzyPlatform's own updater), not by redeploying.
+# On every later boot the volume's copy is authoritative for that runtime
+# state and is NOT resynced from the image - platform/plugin updates must be
+# applied against the live volume (via EzyPlatform's own updater), not by
+# redeploying.
+#
+# Plain deployment config files are the exception: those aren't runtime
+# state, so CONFIG_FILES below is resynced from the image on every boot,
+# meaning git-tracked config changes DO take effect on redeploy as normal.
 #
 # Without RAILWAY_VOLUME_MOUNT_PATH (plain docker-compose), we run in place
 # from /ezyplatform and expect the narrow per-directory bind mounts in
@@ -29,6 +34,10 @@ seed() {
     fi
 }
 
+# Deployment config, not runtime state - always resynced from the image so
+# git changes apply on redeploy without wiping plugins/self-updated jars.
+CONFIG_FILES="web/settings/config.properties"
+
 DATA_DIR="${RAILWAY_VOLUME_MOUNT_PATH:-}"
 
 if [ -n "$DATA_DIR" ]; then
@@ -39,6 +48,9 @@ if [ -n "$DATA_DIR" ]; then
     fi
     cd "$APP_DIR"
     mkdir -p logs upload admin/plugins web/plugins
+    for f in $CONFIG_FILES; do
+        [ -f "/ezyplatform/$f" ] && cp -a "/ezyplatform/$f" "$f"
+    done
 else
     cd /ezyplatform
     seed .seed-settings settings
