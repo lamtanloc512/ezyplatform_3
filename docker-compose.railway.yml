@@ -1,0 +1,51 @@
+networks:
+  default:
+    name: ezyplatform-railway-sim
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ezyplatform-railway-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "12345678"
+      MYSQL_DATABASE: ezyplatform
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_520_ci
+    volumes:
+      - railway-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p12345678"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # Single service running admin+web+socket together, backed by one volume.
+  # This is what Railway will actually run: `CMD ["all"]` from the
+  # Dockerfile, with RAILWAY_VOLUME_MOUNT_PATH pointing at the volume.
+  app:
+    build: .
+    image: ezyplatform:latest
+    container_name: ezyplatform-railway-app
+    environment:
+      RAILWAY_VOLUME_MOUNT_PATH: /ezyplatform-data
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: "12345678"
+      DB_NAME: ezyplatform
+    volumes:
+      - railway-app-data:/ezyplatform-data
+    ports:
+      - "19090:9090"
+      - "18080:8080"
+      - "13005:3005"
+      - "12208:2208"
+      - "12611:2611/udp"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  railway-mysql-data:
+  railway-app-data:

@@ -1,0 +1,68 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ezyplatform-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "12345678"
+      MYSQL_DATABASE: ezyplatform
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_520_ci
+    volumes:
+      - ./docker-data/mysql:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p12345678"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  admin:
+    build: .
+    image: ezyplatform:latest
+    container_name: ezyplatform-admin
+    command: admin
+    volumes: &data-volumes
+      - ./docker-data/settings:/ezyplatform/settings
+      - ./docker-data/admin-plugins:/ezyplatform/admin/plugins
+      - ./docker-data/web-plugins:/ezyplatform/web/plugins
+      - ./docker-data/web-themes:/ezyplatform/web/themes
+      - ./docker-data/socket-plugins:/ezyplatform/socket/plugins
+      - ./docker-data/upload:/ezyplatform/upload
+      - ./docker-data/logs:/ezyplatform/logs
+    ports:
+      - "9090:9090"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    image: ezyplatform:latest
+    container_name: ezyplatform-web
+    command: web
+    volumes: *data-volumes
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      admin:
+        condition: service_started
+    restart: unless-stopped
+
+  socket:
+    image: ezyplatform:latest
+    container_name: ezyplatform-socket
+    command: socket
+    volumes: *data-volumes
+    ports:
+      - "3005:3005"
+      - "2208:2208"
+      - "2611:2611/udp"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      admin:
+        condition: service_started
+    restart: unless-stopped
