@@ -29,10 +29,17 @@ set -e
 # of the *whole container's* memory (independently, not divided between
 # them) - three JVMs can then combine toward 75%+ of container memory just
 # for heaps, which reads as an ever-climbing "leak" on a memory graph even
-# though it's just normal (uncapped) JVM ergonomics. 20% each leaves room
-# for metaspace/threads/native/OS overhead; override JAVA_OPTS yourself once
-# you know the actual instance size.
-: "${JAVA_OPTS:=-XX:+UseContainerSupport -XX:MaxRAMPercentage=20.0 -XX:InitialRAMPercentage=10.0}"
+# though it's just normal (uncapped) JVM ergonomics.
+#
+# Sized from real VPS usage: ~2GB steady-state, ~3GB peak during deploy for
+# admin+web+socket combined. 1GB heap ceiling per JVM = 3GB combined ceiling,
+# matching that observed peak, while steady usage should sit near the
+# observed ~2GB since Java only grows toward -Xmx under actual pressure.
+# Needs a Railway plan with headroom above 3GB for non-heap overhead
+# (metaspace, thread stacks, JIT code cache - typically some hundreds of MB
+# combined across 3 JVMs) - 4GB+ is the practical minimum. Override
+# JAVA_OPTS yourself if your service split isn't roughly even.
+: "${JAVA_OPTS:=-Xms256m -Xmx1024m}"
 
 seed() {
     src="$1"; dst="$2"
