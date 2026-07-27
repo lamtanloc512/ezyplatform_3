@@ -42,9 +42,8 @@ RUN rm -rf /ezyplatform/docker-data /ezyplatform/logs/* \
     && cp -a /ezyplatform/web/themes /ezyplatform/.seed-web-themes \
     && cp -a /ezyplatform/socket/plugins /ezyplatform/.seed-socket-plugins \
     && mkdir -p /ezyplatform/.seed-admin-plugins /ezyplatform/.seed-web-plugins \
-    && chmod +x /ezyplatform/docker-entrypoint.sh /ezyplatform/watch-and-restart.sh \
-    && chmod +x /etc/s6-overlay/s6-rc.d/admin/run /etc/s6-overlay/s6-rc.d/web/run /etc/s6-overlay/s6-rc.d/socket/run \
-    && chmod +x /etc/s6-overlay/s6-rc.d/watch-admin/run /etc/s6-overlay/s6-rc.d/watch-web/run /etc/s6-overlay/s6-rc.d/watch-socket/run
+    && chmod +x /ezyplatform/docker-entrypoint.sh /ezyplatform/watch-and-restart.sh /ezyplatform/watch-shared-and-restart-all.sh \
+    && chmod +x /etc/s6-overlay/s6-rc.d/*/run
 
 ENTRYPOINT ["/ezyplatform/docker-entrypoint.sh"]
 CMD ["all"]

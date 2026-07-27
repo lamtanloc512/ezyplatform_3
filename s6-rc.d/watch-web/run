@@ -1,2 +1,2 @@
 #!/bin/bash
-exec /ezyplatform/watch-and-restart.sh web web/plugins web/themes .runtime/web
+exec /ezyplatform/watch-and-restart.sh web web/plugins web/themes .runtime/web web/lib web/resources web/settings

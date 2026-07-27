@@ -1,2 +1,2 @@
 #!/bin/bash
-exec /ezyplatform/watch-and-restart.sh socket socket/plugins .runtime/socket
+exec /ezyplatform/watch-and-restart.sh socket socket/plugins .runtime/socket socket/lib socket/settings

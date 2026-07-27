@@ -1,0 +1,2 @@
+#!/bin/bash
+exec /ezyplatform/watch-shared-and-restart-all.sh
