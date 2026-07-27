@@ -1,6 +1,6 @@
 #!/bin/bash
-# Starts the requested service: admin | web | socket | all (all three in one
-# container, for a single-service Railway deployment).
+# Prepares the app directory then starts the requested service:
+# admin | web | socket | all (all three, supervised by s6-overlay).
 #
 # EzyPlatform treats its whole install directory as mutable, self-updating
 # state (update.sh overwrites admin/lib, web/lib, socket/lib, lib/, resources
@@ -16,10 +16,23 @@
 # state, so CONFIG_FILES below is resynced from the image on every boot,
 # meaning git-tracked config changes DO take effect on redeploy as normal.
 #
+# In "all" mode, admin/web/socket each invoke this same script (see
+# s6-rc.d/*/run), so the seeding below is guarded by a mkdir-based lock -
+# mkdir is atomic, so exactly one of them performs it while the others wait.
+#
 # Without RAILWAY_VOLUME_MOUNT_PATH (plain docker-compose), we run in place
 # from /ezyplatform and expect the narrow per-directory bind mounts in
 # docker-compose.yml, seeded here from the .seed-* copies baked at build time.
 set -e
+
+# Without an explicit cap, each JVM defaults to letting itself use up to 25%
+# of the *whole container's* memory (independently, not divided between
+# them) - three JVMs can then combine toward 75%+ of container memory just
+# for heaps, which reads as an ever-climbing "leak" on a memory graph even
+# though it's just normal (uncapped) JVM ergonomics. 20% each leaves room
+# for metaspace/threads/native/OS overhead; override JAVA_OPTS yourself once
+# you know the actual instance size.
+: "${JAVA_OPTS:=-XX:+UseContainerSupport -XX:MaxRAMPercentage=20.0 -XX:InitialRAMPercentage=10.0}"
 
 seed() {
     src="$1"; dst="$2"
@@ -36,9 +49,16 @@ DATA_DIR="${RAILWAY_VOLUME_MOUNT_PATH:-}"
 
 if [ -n "$DATA_DIR" ]; then
     APP_DIR="$DATA_DIR/app"
-    mkdir -p "$APP_DIR"
-    if [ -z "$(ls -A "$APP_DIR" 2>/dev/null)" ]; then
-        cp -a /ezyplatform/. "$APP_DIR/"
+    LOCK_DIR="$DATA_DIR/.seed.lock"
+    mkdir -p "$DATA_DIR"
+    if mkdir "$LOCK_DIR" 2>/dev/null; then
+        mkdir -p "$APP_DIR"
+        if [ -z "$(ls -A "$APP_DIR" 2>/dev/null)" ]; then
+            cp -a /ezyplatform/. "$APP_DIR/"
+        fi
+        rmdir "$LOCK_DIR"
+    else
+        while [ -d "$LOCK_DIR" ]; do sleep 1; done
     fi
     cd "$APP_DIR"
     mkdir -p logs upload admin/plugins web/plugins
@@ -107,54 +127,6 @@ run_socket() {
     exec java $JAVA_OPTS -cp "$CP" org.youngmonkeys.ezyplatform.socket.SocketStartup socket/settings/socket.properties
 }
 
-# Plugin/theme installs AND activate/deactivate both need a process restart
-# to take effect (Java's -cp classpath is fixed at JVM boot; activate state
-# lives in .runtime/<service>/*.txt, e.g. .runtime/web/themes.txt, which is
-# a plain file write too - not a DB row, so watching files catches both).
-# EzyPlatform's admin UI has no restart action that reliably reaches our
-# process, so instead of a manual restart on Railway's dashboard, each
-# service supervises itself: watches only ITS OWN directories and restarts
-# only itself when they change (settled, debounced ~10s so we don't restart
-# mid-upload) - so e.g. a web theme change never disturbs admin or socket.
-SHUTTING_DOWN=0
-
-supervise() {
-    name="$1"; run_fn="$2"; shift 2
-    watch_dirs="$*"
-    fingerprint() {
-        find $watch_dirs -type f -exec stat -c '%n %Y %s' {} \; 2>/dev/null | sort | sha1sum
-    }
-    while [ "$SHUTTING_DOWN" = "0" ]; do
-        "$run_fn" &
-        pid=$!
-        prev="$(fingerprint)"
-        while [ "$SHUTTING_DOWN" = "0" ] && kill -0 "$pid" 2>/dev/null; do
-            sleep 10
-            cur="$(fingerprint)"
-            if [ "$cur" != "$prev" ]; then
-                sleep 10
-                settled="$(fingerprint)"
-                if [ "$settled" = "$cur" ]; then
-                    echo "docker-entrypoint: $name plugin/theme change detected, restarting $name only"
-                    kill "$pid" 2>/dev/null || true
-                fi
-            fi
-            prev="$cur"
-        done
-        # `wait` can return early if this subshell catches a trapped signal
-        # mid-wait (e.g. the container-wide SIGTERM below), before the child
-        # has actually released its port - confirm it's truly gone before
-        # ever considering a relaunch, or two instances briefly race to
-        # bind the same port and one crashes.
-        wait "$pid" 2>/dev/null || true
-        while kill -0 "$pid" 2>/dev/null; do
-            sleep 1
-        done
-        [ "$SHUTTING_DOWN" = "1" ] && break
-        echo "docker-entrypoint: $name exited, relaunching"
-    done
-}
-
 case "$1" in
     admin)
         run_admin
@@ -166,16 +138,11 @@ case "$1" in
         run_socket
         ;;
     all)
-        # SHUTTING_DOWN is set here, in the trap, before the supervise
-        # subshells are forked below, so each one inherits this exact trap
-        # and - since each subshell has its own copy of the variable - sets
-        # its own SHUTTING_DOWN when the signal reaches it, telling its loop
-        # to exit cleanly instead of relaunching mid-shutdown.
-        trap 'SHUTTING_DOWN=1; kill -TERM 0' TERM INT
-        supervise admin run_admin admin/plugins .runtime/admin &
-        supervise web run_web web/plugins web/themes .runtime/web &
-        supervise socket run_socket socket/plugins .runtime/socket &
-        wait
+        # Hand off to s6-overlay's init, which reads /etc/s6-overlay/s6-rc.d
+        # (copied in at build time) to supervise admin/web/socket plus a
+        # watcher per service that restarts it when its plugin/theme files
+        # change - see s6-rc.d/ and watch-and-restart.sh.
+        exec /init
         ;;
     *)
         exec "$@"

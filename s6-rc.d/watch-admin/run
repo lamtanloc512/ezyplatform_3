@@ -1,0 +1,2 @@
+#!/bin/bash
+exec /ezyplatform/watch-and-restart.sh admin admin/plugins .runtime/admin
